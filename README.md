@@ -60,6 +60,8 @@ $ ip a
 
 6. Log into the BBB, using the default password `temppwd`:
 
+>NOTE: Each time the BBB boots a clean image, it regenerates its `ssh` host keys. If you reach this step multiple times on the same PC, you might need to manage your `~/.ssh/known_hosts` file accordingly.
+
 ```
 $ ssh debian@192.168.6.2
 ```

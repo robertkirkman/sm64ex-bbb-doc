@@ -179,7 +179,7 @@ NOTE: To hear the game audio, your display must have speakers or a 3.5mm jack fo
 
 ```
 $ cd
-# pvrsrvctl --init --no-module
+# pvrsrvctl --start --no-module
 $ sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
 

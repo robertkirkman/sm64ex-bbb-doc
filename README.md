@@ -92,7 +92,9 @@ $ sudo su
 ```
 # apt-get update
 # apt-get upgrade -y
-# apt-get install -y bbb.io-kernel-5.10-ti-am335x build-essential cmake pkg-config libdrm-dev libwayland-server0 libwayland-client0 libasound2-dev libudev-dev libevdev-dev libusb-dev libxkbcommon-dev python3
+# apt-get install -y bbb.io-kernel-5.10-ti-am335x build-essential cmake pkg-config \
+                     libdrm-dev libwayland-server0 libwayland-client0 libasound2-dev \
+                     libudev-dev libevdev-dev libusb-dev libxkbcommon-dev python3
 # reboot
 ```
 

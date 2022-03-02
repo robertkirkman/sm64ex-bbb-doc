@@ -87,7 +87,7 @@ $ sudo su
 # systemctl restart systemd-timesyncd
 ```
 
-10. Check for updates, update Debian, and install all the precompiled dependencies needed, then reboot the BBB; These include the open-source kernel-space portion of the PowerVR SGX530 GPU's graphics driver and build dependencies for SDL2:
+10. Check for updates, update Debian, and install all the precompiled dependencies needed, then reboot the BBB; these include the open-source kernel-space portion of the PowerVR SGX530 GPU's graphics driver, build dependencies for SDL2, and runtime dependencies of the user-space portion of the graphics driver:
 
 ```
 # apt-get update

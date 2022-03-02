@@ -180,7 +180,7 @@ $ make
 
 18. Connect the display to the BBB using the HDMI cord, then initialize the user-space graphics driver and run the Super Mario 64 PC port:
 
-NOTE: To hear the game audio, your display must have speakers or a 3.5mm jack for HDMI audio.
+>NOTE: To hear the game audio, your display must have speakers or a 3.5mm jack for HDMI audio.
 
 ```
 $ cd

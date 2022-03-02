@@ -164,7 +164,7 @@ $ cp baserom.us.z64 sm64ex
 ```
 $ cd sm64ex 
 $ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/sm64ex-bbb.patch | git apply -v
-$ BETTERCAMERA=1 EXTERNAL_DATA=1 TEXTURE_FIX=1 make
+$ TARGET_BBB=1 BETTERCAMERA=1 EXTERNAL_DATA=1 TEXTURE_FIX=1 make
 ```
 
 17. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile and run the driver:

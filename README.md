@@ -168,14 +168,14 @@ $ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/sm64e
 $ TARGET_BBB=1 BETTERCAMERA=1 EXTERNAL_DATA=1 TEXTURE_FIX=1 make
 ```
 
-17. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile and run the driver:
+17. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile, and run the driver:
 
 ```
 $ cd
 $ git clone https://github.com/ToadKing/wii-u-gc-adapter.git
 $ cd wii-u-gc-adapter
 $ make
-$ ./wii-u-gc-adapter &
+# ./wii-u-gc-adapter &
 ```
 
 18. Connect the display to the BBB using the HDMI cord, then initialize the user-space graphics driver and run the Super Mario 64 PC port:

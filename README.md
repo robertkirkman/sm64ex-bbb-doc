@@ -107,7 +107,7 @@ $ ssh debian@192.168.6.2
 
 12. Now on the BBB again, download and install the proprietary user-space portion of the PowerVR SGX530 GPU's graphics driver:
 
->NOTE: This driver provides OpenGL ES 2.1, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to hardware limitations, for strictly KMS/DRM contexts, and silently conflicts with any other implementation of those libraries (such as those in the Debian official repositories). No open-source user-space driver for any PowerVR GPU has ever existed.
+>NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to hardware limitations, for strictly KMS/DRM contexts, and silently conflicts with any other implementation of those libraries (such as those in the Debian official repositories). No open-source user-space driver for any PowerVR GPU has ever existed.
 
 ```
 $ git clone -b 1.17.4948957-next git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git

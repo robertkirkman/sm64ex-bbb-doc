@@ -15,21 +15,24 @@
 
 ```
 $ export newest=$(curl https://rcn-ee.com/rootfs/bb.org/testing/ | grep -Eo "[0-9]+-[0-9]+-[0-9]+/" | tr -d '/' | tail -n1)
-$ wget https://rcn-ee.com/rootfs/bb.org/testing/$newest/bullseye-minimal/am335x-debian-11.2-minimal-armhf-$newest-2gb.img.xz
-$ wget https://rcn-ee.com/rootfs/bb.org/testing/$newest/bullseye-minimal/am335x-debian-11.2-minimal-armhf-$newest-2gb.img.xz.sha256sum
-$ sha256sum --check am335x-debian-11.2-minimal-armhf-$newest-2gb.img.xz.sha256sum
-$ xz -vd am335x-debian-11.2-minimal-armhf-$newest-2gb.img.xz
+$ wget https://rcn-ee.com/rootfs/bb.org/testing/$newest/bullseye-minimal/am335x-debian-11.3-minimal-armhf-$newest-2gb.img.xz
+$ wget https://rcn-ee.com/rootfs/bb.org/testing/$newest/bullseye-minimal/am335x-debian-11.3-minimal-armhf-$newest-2gb.img.xz.sha256sum
+$ sha256sum --check am335x-debian-11.3-minimal-armhf-$newest-2gb.img.xz.sha256sum
+$ xz -vd am335x-debian-11.3-minimal-armhf-$newest-2gb.img.xz
 ```
 
 2. Insert the MicroSD card and run `lsblk` to identify its block device name, `X` where `X` is a file in `/dev/`, then write the extracted image to the card:
 
 **WARNING: THIS DELETES PREEXISTING CONTENT ON THE CARD, AND IF YOU CHOOSE THE WRONG DEVICE, YOU WILL LOSE DATA**
 
->NOTE: For the following command requiring root, indicated by `#`, use `sudo -E` for a single command or `sudo -E su` to obtain the root shell to preserve the `$newest` environment variable, for convenience.
+>NOTE: For the following command requiring root, indicated by `#`, use `sudo -E` for a single command or `sudo -E su` to obtain the root shell to preserve the `$newest` environment variable, for convenience.**Throughout this guide, continue to do one of the following, choose your preference:**<br>
+**A. use `sudo -E` or `sudo -E su`**<br>
+**B. keep track of the environment variables**<br>
+**C. change PREFIX/install paths to avoid switching users to the degree that you prefer**<br>
 
 ```
 $ lsblk
-# dd if=am335x-debian-11.2-minimal-armhf-$newest-2gb.img of=/dev/X bs=1M status=progress oflag=sync
+# dd if=am335x-debian-11.3-minimal-armhf-$newest-2gb.img of=/dev/X bs=1M status=progress oflag=sync
 ```
 
 3. Use `lsblk` again to identify the root partition of the newly flashed MicroSD card `/dev/XY`, mount it, enable the auto-flasher, and set the display resolution to 640x480, both of which can help performance later, then unmount `/dev/XY`:
@@ -55,7 +58,7 @@ $ ip a
 # sysctl net.ipv4.ip_forward=1
 # iptables -t nat -A POSTROUTING -o eno1 -j MASQUERADE
 # iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-# iptables -A FORWARD -i enp0s20u12u1 -o eno1 -j ACCEPT
+# iptables -A FORWARD -i enp0s20u12u4 -o eno1 -j ACCEPT
 ```
 
 6. Log into the BBB, using the default password `temppwd`:
@@ -95,7 +98,7 @@ $ sudo su
 # apt-get install -y bbb.io-kernel-5.10-ti-am335x build-essential cmake pkg-config \
                      libdrm-dev libwayland-server0 libwayland-client0 libasound2-dev \
                      libudev-dev libevdev-dev libusb-dev libusb-1.0-0-dev \
-                     libxkbcommon-dev python3
+                     libxkbcommon-dev
 # reboot
 ```
 
@@ -107,7 +110,7 @@ $ ssh debian@192.168.6.2
 
 12. Now on the BBB again, download and install the proprietary user-space portion of the PowerVR SGX530 GPU's graphics driver:
 
->NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to hardware limitations, for strictly KMS/DRM contexts, and silently conflicts with any other implementation of those libraries (such as those in the Debian official repositories). No open-source user-space driver for any PowerVR GPU has ever existed.
+>NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to hardware limitations, for strictly KMS/DRM contexts, and silently conflicts with any other implementation of OpenGL, EGL or GBM (such as those in the Debian official repositories). In the present day, open-source user-space drivers for [PowerVR Rogue GPUs](https://gitlab.freedesktop.org/mesa/mesa/-/tree/main/src/imagination) and [PowerVR Series1 3D accelerators](https://github.com/powervr-graphics/PowerVR-Series1) exist, but these were designed in the 2010s and 1990s, respectively. The PowerVR SGX530 was designed in the 2000s, and as of yet no user-space source code for its drivers is publicly accessible.
 
 ```
 $ git clone -b 1.17.4948957-next git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git
@@ -129,15 +132,16 @@ $ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/sdl-b
 ```
 $ mkdir build
 $ cd build
-$ CFLAGS="-O3 -march=armv7-a -marm -mfpu=neon -mtune=cortex-a8" ../configure \
+$ export CFLAGS="-O3 -march=armv7-a -marm -mfpu=neon -mtune=cortex-a8" 
+$ ../configure \
       --prefix=/usr \
       --enable-video-kmsdrm \
       --enable-video-opengles \
+      --enable-video-opengles1 \
       --enable-video-opengles2 \
       --enable-alsa \
       --disable-video-vulkan \
       --disable-video-opengl \
-      --disable-video-opengles1 \
       --disable-video-dummy \
       --disable-video-x11 \
       --disable-pulseaudio \
@@ -150,7 +154,7 @@ $ make
 # make install
 ```
 
-15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your localization's filename:
+15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
 
 >NOTE: For information on how to obtain a Super Mario 64 ROM, see here: https://github.com/sanni/cartreader
 
@@ -168,12 +172,14 @@ $ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/sm64e
 $ TARGET_BBB=1 BETTERCAMERA=1 EXTERNAL_DATA=1 TEXTURE_FIX=1 make
 ```
 
-17. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile, and run the driver:
+17. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile, and run the driver. You only need to do this if you are using a GameCube Controller Adapter with vendor and device ID `057e:0337` as it appears in `lsusb`:
 
 ```
+$ lsusb
 $ cd
 $ git clone https://github.com/ToadKing/wii-u-gc-adapter.git
 $ cd wii-u-gc-adapter
+$ export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 $ make
 # ./wii-u-gc-adapter &
 ```
@@ -187,6 +193,54 @@ $ cd
 # pvrsrvctl --start --no-module
 $ sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
+**You should now be able to see and play the game.** If the performance isn't satisfactory, or you want to use this patched SDL for other purposes, keep reading.
 
->CREDITS:
->Huge thanks to zmatt on #beagle at irc.libera.chat, vanfanel, Rob Clark, Remi Avignon, Robert Nelson, and all the developers at Texas Instruments and Imagination Technologies, without whom playing Super Mario 64 on BeagleBone Black would not be possible.
+## Other software made usable by the patched SDL:
+### mupen64plus
+>NOTE: For reasons beyond my current understanding, with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as there is no need for mods that only work on PC port, not real console - or if there is need for mods that only work on console and emulator.
+
+1. Install mupen64plus
+>NOTE: I have deliberately unrolled the intended Bash loops to call attention to mupen64plus' not-fully-sane build system and make it easier to understand.
+```
+# apt-get install -y zlib1g-dev libpng-dev libfreetype-dev nasm libboost-dev libboost-filesystem-dev
+$ cd
+$ git clone https://github.com/mupen64plus/mupen64plus-core.git
+$ git clone https://github.com/mupen64plus/mupen64plus-ui-console.git
+$ git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git
+$ git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git
+$ git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git
+$ git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
+$ export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
+$ cd ~/mupen64plus-core/projects/unix
+$ make all
+# make install
+$ cd ~/mupen64plus-ui-console/projects/unix
+$ make all
+# make install
+$ cd ~/mupen64plus-audio-sdl/projects/unix
+$ make all
+# make install
+$ cd ~/mupen64plus-input-sdl/projects/unix
+$ make all
+# make install
+$ cd ~/mupen64plus-rsp-hle/projects/unix
+$ make all
+# make install
+$ cd ~/mupen64plus-video-gles2n64/projects/unix
+$ make all
+# make install
+```
+
+2. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
+```
+$ lsusb
+# ~/wii-u-gc-adapter/wii-u-gc-adapter &
+# pvrsrvctl --start --no-module
+$ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
+```
+
+# CREDITS:
+
+>Huge thanks to zmatt on #beagle at irc.libera.chat, vanfanel, Rob Clark, Remi Avignon, Robert Nelson, and all the engineers at Texas Instruments and Imagination Technologies, without whom playing Super Mario 64 on BeagleBone Black would not be possible.
+
+>Thank you to Motos on The Cult Discord guild for the B3313 mod for helping with the mupen64plus setup

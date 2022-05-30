@@ -229,6 +229,7 @@ $ make all
 $ cd ~/mupen64plus-video-gles2n64/projects/unix
 $ make all
 # make install
+# sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
 ```
 
 2. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:

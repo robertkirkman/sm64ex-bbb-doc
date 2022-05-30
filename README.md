@@ -98,7 +98,7 @@ $ sudo su
 # apt-get install -y bbb.io-kernel-5.10-ti-am335x build-essential cmake pkg-config \
                      libdrm-dev libwayland-server0 libwayland-client0 libasound2-dev \
                      libudev-dev libevdev-dev libusb-dev libusb-1.0-0-dev \
-                     libxkbcommon-dev
+                     libxkbcommon-dev usbutils
 # reboot
 ```
 

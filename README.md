@@ -25,7 +25,7 @@ $ xz -vd am335x-debian-11.3-minimal-armhf-$newest-2gb.img.xz
 
 **WARNING: THIS DELETES PREEXISTING CONTENT ON THE CARD, AND IF YOU CHOOSE THE WRONG DEVICE, YOU WILL LOSE DATA**
 
->NOTE: For the following command requiring root, indicated by `#`, use `sudo -E` for a single command or `sudo -E su` to obtain the root shell to preserve the `$newest` environment variable, for convenience.**Throughout this guide, continue to do one of the following, choose your preference:**<br>
+>NOTE: For the following command requiring root, indicated by `#`, use `sudo -E` for a single command or `sudo -E su` to obtain the root shell to preserve the `$newest` environment variable, for convenience. **Throughout this guide, continue to do one of the following, choose your preference:**<br>
 **A. use `sudo -E` or `sudo -E su`**<br>
 **B. keep track of the environment variables**<br>
 **C. change PREFIX/install paths to avoid switching users to the degree that you prefer**<br>
@@ -110,7 +110,7 @@ $ ssh debian@192.168.6.2
 
 12. Now on the BBB again, download and install the proprietary user-space portion of the PowerVR SGX530 GPU's graphics driver:
 
->NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to hardware limitations, for strictly KMS/DRM contexts, and silently conflicts with any other implementation of OpenGL, EGL or GBM (such as those in the Debian official repositories). In the present day, open-source user-space drivers for [PowerVR Rogue GPUs](https://gitlab.freedesktop.org/mesa/mesa/-/tree/main/src/imagination) and [PowerVR Series1 3D accelerators](https://github.com/powervr-graphics/PowerVR-Series1) exist, but these were designed in the 2010s and 1990s, respectively. The PowerVR SGX530 was designed in the 2000s, and as of yet no user-space source code for its drivers is publicly accessible.
+>NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to [hardware limitations](https://software-dl.ti.com/processor-sdk-linux/esd/docs/latest/linux/Foundational_Components/Graphics/AM3_Beagle_Bone_Black_Configuration.html) (dont follow the directions there, they are outdated), for strictly KMS/DRM contexts, and silently conflicts with any other implementation of OpenGL, EGL or GBM (such as those in the Debian official repositories). In the present day, open-source user-space drivers for [PowerVR Rogue GPUs](https://gitlab.freedesktop.org/mesa/mesa/-/tree/main/src/imagination) and [PowerVR Series1 3D accelerators](https://github.com/powervr-graphics/PowerVR-Series1) exist, but these were designed in the 2010s and 1990s, respectively. The PowerVR SGX530 was designed in the 2000s, and as of yet no user-space source code for its drivers is publicly accessible.
 
 ```
 $ git clone -b 1.17.4948957-next git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git
@@ -238,6 +238,81 @@ $ lsusb
 # ~/wii-u-gc-adapter/wii-u-gc-adapter &
 # pvrsrvctl --start --no-module
 $ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
+```
+
+### Half-Life 2
+```
+$ cd
+$ git clone https://github.com/nillerusr/source-engine --recursive --depth 1
+$ cd source-engine
+$ ./waf configure -T debug
+$ ./waf build
+# apt-get install -y libfontconfig-dev libbz2-dev libcurl4-openssl-dev libjpeg-dev libopenal-dev libopus-dev python2.7-dev python-is-python2
+```
+
+### Bad Apple
+>The famous Touhou music video
+
+```
+# apt-get install -y libass-dev libgnutls28-dev libmp3lame-dev libvorbis-dev meson ninja-build texinfo yasm libvpx-dev
+$ cd
+$ mkdir ffmpeg_sources
+$ cd ffmpeg_sources
+$ wget -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
+$ tar xjvf ffmpeg-snapshot.tar.bz2
+$ cd ffmpeg
+$ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
+  --prefix="$HOME/ffmpeg_build" \
+  --pkg-config-flags="--static" \
+  --extra-cflags="-I$HOME/ffmpeg_build/include" \
+  --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+  --extra-libs="-lpthread -lm" \
+  --ld="g++" \
+  --bindir="$HOME/bin" \
+  --enable-gpl \
+  --enable-libvpx \
+  --enable-libopus \
+  --enable-libvorbis 
+$ PATH="$HOME/bin:$PATH" make
+$ make install
+$ yt-dlp https://www.youtube.com/watch?v=i41KoE0iMYU
+$ ffmpeg -loop 1 -re -i badapple.mp4 -f kmsdumb /dev/dri/card0
+```
+
+## Other... stuff ig
+
+### Stream audio from BBB to PC using pulseaudio `module_native_protocol_tcp`
+>NOTE: This uses a lot of CPU. Not a good idea.
+
+1. BeagleBone Black:
+```
+# apt-get install -y pulseaudio
+$ systemctl --user stop pulseaudio.service
+```
+
+2. Server (GNU/Linux system with speakers), where `192.168.6.2` is your BBB's IP address:
+```
+$ systemctl --user stop pulseaudio.service
+$ ssh -R 4713:localhost:4713 debian@192.168.6.2
+```
+
+3. Server (leave the shell above running and launch a new, separate shell):
+```
+$ systemctl --user start pulseaudio.service
+$ pactl load-module module-native-protocol-tcp auth-anonymous=1
+```
+
+4. BeagleBone Black:
+```
+$ systemctl --user start pulseaudio.service
+$ pactl load-module module-native-protocol-tcp
+$ export PULSE_SERVER=localhost
+$ sm64ex/build/us_pc/sm64.us.f3dex2e
+```
+
+### All I want to do is turn off the stupid irritating flashing LEDs
+```
+# bash -c 'for i in $(seq 0 3); do echo 0 > "/sys/class/leds/beaglebone:green:usr${i}/brightness"; done'
 ```
 
 # CREDITS:

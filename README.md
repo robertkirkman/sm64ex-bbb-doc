@@ -154,9 +154,10 @@ $ make
 # make install
 ```
 
-15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
+>NOTE: You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there.
 
->NOTE: For information on how to obtain a Super Mario 64 ROM, see here: https://github.com/sanni/cartreader
+15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
+>NOTE: For information on how to obtain a Super Mario 64 ROM, see [here](https://github.com/sanni/cartreader).
 
 ```
 $ cd
@@ -193,13 +194,13 @@ $ cd
 # pvrsrvctl --start --no-module
 $ sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
-**You should now be able to see and play the game.** If the performance isn't satisfactory, or you want to use this patched SDL for other purposes, keep reading.
+>NOTE: **You should now be able to see and play the game.** If the performance isn't satisfactory, or you want to use this patched SDL for other purposes, keep reading.
 
 ## Other software made usable by the patched SDL:
 ### mupen64plus
 >NOTE: For reasons beyond my current understanding, with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as there is no need for mods that only work on PC port, not real console - or if there is need for mods that only work on console and emulator.
 
-1. Install mupen64plus
+1. Download, compile and install mupen64plus and the `gles2n64` video plugin for it:
 >NOTE: I have deliberately unrolled the intended Bash loops to call attention to mupen64plus' not-fully-sane build system and make it easier to understand.
 ```
 # apt-get install -y zlib1g-dev libpng-dev libfreetype-dev nasm libboost-dev libboost-filesystem-dev
@@ -232,7 +233,7 @@ $ make all
 # sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
 ```
 
-2. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
+2. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
 ```
 $ lsusb
 # ~/wii-u-gc-adapter/wii-u-gc-adapter &
@@ -241,20 +242,42 @@ $ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
 ```
 
 ### Half-Life 2
+1. Copy the `ep2`, `episodic`, `hl2`, `lostcoast`, `platform` and `steam_input` folders from your Half-Life 2 installation on PC into a new folder named `halflife2` on an empty USB flash drive or SD card formatted with a UNIX-like filesystem (such as `ext4`) with at least 10GB of free space, then unmount the drive, `sync`, remove it from your PC and plug it into the BBB. 
+>Note: For information on how to obtain a copy of Half-Life 2, see [here](https://store.steampowered.com/app/220/HalfLife_2/).
+
+2. On the BBB, identify and mount the drive, where `/dev/XY` is the block device name of your drive's UNIX-like partition:
 ```
-$ cd
-$ git clone https://github.com/nillerusr/source-engine --recursive --depth 1
-$ cd source-engine
-$ ./waf configure -T debug
-$ ./waf build
-# apt-get install -y libfontconfig-dev libbz2-dev libcurl4-openssl-dev libjpeg-dev libopenal-dev libopus-dev python2.7-dev python-is-python2
+$ lsblk
+# mount /dev/XY /mnt
+$ cd /mnt
+$ mkdir -p halflife2/custom/nillerusr
+$ wget http://nillerusr.fvds.ru/shaders.tar.xz
+$ tar xvf shaders.tar.xz -C halflife2/custom/nillerusr
 ```
 
-### Bad Apple
+3. Download, patch, compile and install nillerusr's actively-maintained leaked-source Source Engine into the Half-Life 2 assets folder:
+```
+# apt-get install -y libfontconfig-dev libbz2-dev libcurl4-openssl-dev libjpeg-dev libopenal-dev libopus-dev python2.7-dev python-is-python2
+$ git clone --recursive --depth 1 -b sanitize https://github.com/nillerusr/source-engine
+$ cd source-engine
+$ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/source-engine-bbb.patch | git apply -v
+$ ./waf configure -T debug --prefix=/mnt/halflife2
+$ ./waf install
+```
+
+4. Prepare input devices (keyboard and mouse), navigate to the new Half-Life 2 installation, start the PowerVR userspace daemon if it's not already running, and run `hl2_launcher`:
+```
+$ cd /mnt/halflife2
+# pvrsrvctl --start --no-module
+$ ./hl2_launcher
+```
+
+### Bad Apple!!
 >The famous Touhou music video
 
+1. Compile FFmpeg, being very careful not to accidentally install any packages that conflict with the BBB's graphics driver:
 ```
-# apt-get install -y libass-dev libgnutls28-dev libmp3lame-dev libvorbis-dev meson ninja-build texinfo yasm libvpx-dev
+# apt-get install -y libass-dev libgnutls28-dev libmp3lame-dev libvorbis-dev meson ninja-build texinfo yasm libvpx-dev python3-pip
 $ cd
 $ mkdir ffmpeg_sources
 $ cd ffmpeg_sources
@@ -272,11 +295,19 @@ $ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./co
   --enable-gpl \
   --enable-libvpx \
   --enable-libopus \
-  --enable-libvorbis 
+  --enable-libvorbis \
+  --enable-libdrm
 $ PATH="$HOME/bin:$PATH" make
 $ make install
-$ yt-dlp https://www.youtube.com/watch?v=i41KoE0iMYU
-$ ffmpeg -loop 1 -re -i badapple.mp4 -f kmsdumb /dev/dri/card0
+```
+
+2. Install yt-dlp, download the official Bad Apple!! video, and play it on the DRM framebuffer:
+```
+$ cd
+$ python3 -m pip install -U yt-dlp
+$ PATH="$HOME/.local/bin:$PATH" yt-dlp -o "badapple.%(ext)s" https://www.youtube.com/watch?v=i41KoE0iMYU
+# pvrsrvctl --start --no-module
+$ PATH="$HOME/bin:$PATH" ffmpeg -loop 1 -re -i badapple.mp4 -s 640:480 -pix_fmt bgr0 -f kmsdumb /dev/dri/card0
 ```
 
 ## Other... stuff ig
@@ -320,3 +351,5 @@ $ sm64ex/build/us_pc/sm64.us.f3dex2e
 >Huge thanks to zmatt on #beagle at irc.libera.chat, vanfanel, Rob Clark, Remi Avignon, Robert Nelson, and all the engineers at Texas Instruments and Imagination Technologies, without whom playing Super Mario 64 on BeagleBone Black would not be possible.
 
 >Thank you to benedani on The Cult Discord guild for the B3313 mod for helping with the mupen64plus setup
+
+>Thank you very much to nillerusr for developing the open-source version of Half-Life 2 and helping me install it

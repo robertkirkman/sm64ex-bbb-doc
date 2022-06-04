@@ -242,6 +242,19 @@ $ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
 ```
 
 ### Half-Life 2
+#### Prerequisites:
+* GNU/Linux PC with an internet connection and a MicroSD card slot or USB A Female port
+* BeagleBone Black prepared as directed in steps 1-14 of the above guide
+* 10GB+ MicroSD card or USB flash drive depending on the ports available on the PC
+* USB A Male to Mini-B Male cord
+* Micro-HDMI Male to HDMI Male cord
+* Display with an HDMI Female port
+* 2+ port powered USB hub
+* USB mouse and keyboard
+
+**WARNING: BE CAREFUL WITH UNPOWERED USB HUBS! THE BBB CANNOT SUPPLY MUCH CURRENT. RATHER THAN TRYING TO CALCULATE THAT AND PUSH THE LIMIT, IT IS SAFER TO USE A POWERED HUB.**
+
+#### Installation:
 1. Copy the `ep2`, `episodic`, `hl2`, `lostcoast`, `platform` and `steam_input` folders from your Half-Life 2 installation on PC into a new folder named `halflife2` on an empty USB flash drive or SD card formatted with a UNIX-like filesystem (such as `ext4`) with at least 10GB of free space, then unmount the drive, `sync`, remove it from your PC and plug it into the BBB. 
 >Note: For information on how to obtain a copy of Half-Life 2, see [here](https://store.steampowered.com/app/220/HalfLife_2/).
 
@@ -275,15 +288,13 @@ $ ./hl2_launcher
 ### Bad Apple!!
 >The famous Touhou music video
 
-1. Compile FFmpeg, being very careful not to accidentally install any packages that conflict with the BBB's graphics driver:
+1. Patch and compile FFmpeg, which requires patching to detect and link against our graphics driver, being very careful not to accidentally install any packages that conflict with the BBB's graphics driver:
 ```
 # apt-get install -y libass-dev libgnutls28-dev libmp3lame-dev libvorbis-dev meson ninja-build texinfo yasm libvpx-dev python3-pip
 $ cd
-$ mkdir ffmpeg_sources
-$ cd ffmpeg_sources
-$ wget -O ffmpeg-snapshot.tar.bz2 https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
-$ tar xjvf ffmpeg-snapshot.tar.bz2
-$ cd ffmpeg
+$ git clone https://github.com/FFmpeg/FFmpeg.git
+$ cd FFmpeg
+$ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/ffmpeg-bbb.patch | git apply -v
 $ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
   --prefix="$HOME/ffmpeg_build" \
   --pkg-config-flags="--static" \
@@ -296,18 +307,59 @@ $ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./co
   --enable-libvpx \
   --enable-libopus \
   --enable-libvorbis \
-  --enable-libdrm
+  --enable-opengl
 $ PATH="$HOME/bin:$PATH" make
 $ make install
 ```
 
-2. Install yt-dlp, download the official Bad Apple!! video, and play it on the DRM framebuffer:
+2. Install yt-dlp, download the official Bad Apple!! video, and play it using OpenGL (ES 2.0) backend in an SDL window which will automatically convert it to pixel format rgb565 in real time:
 ```
 $ cd
 $ python3 -m pip install -U yt-dlp
 $ PATH="$HOME/.local/bin:$PATH" yt-dlp -o "badapple.%(ext)s" https://www.youtube.com/watch?v=i41KoE0iMYU
 # pvrsrvctl --start --no-module
-$ PATH="$HOME/bin:$PATH" ffmpeg -loop 1 -re -i badapple.mp4 -s 640:480 -pix_fmt bgr0 -f kmsdumb /dev/dri/card0
+$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -f opengl
+```
+
+### GZDoom
+
+1.
+>NOTE: `libopus-dev` conflict with Half-Life 2
+```
+$ cd
+$ wget -O ~/.config/gzdoom/doom.wad https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
+# apt-get install -y libgme-dev libmpg123-dev timidity
+$ mkdir -p zmusic_build
+$ cd zmusic_build
+$ git clone https://github.com/coelckers/ZMusic.git zmusic
+$ mkdir -p zmusic/build
+$ cd zmusic/build
+$ export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
+$ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+$ make
+# make install
+```
+
+2.
+```
+$ cd
+$ mkdir -p gzdoom_build
+$ cd gzdoom_build
+$ git clone https://github.com/coelckers/gzdoom.git
+$ cd gzdoom
+$ git config --local --add remote.origin.fetch +refs/tags/*:refs/tags/*
+$ git pull
+$ mkdir build
+$ cd build
+$ cmake .. -DNO_FMOD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+$ make
+# make install
+```
+
+3.
+```
+# pvrsrvctl --start --no-module
+$ gzdoom -gles2_renderer
 ```
 
 ## Other... stuff ig
@@ -352,4 +404,4 @@ $ sm64ex/build/us_pc/sm64.us.f3dex2e
 
 >Thank you to benedani on The Cult Discord guild for the B3313 mod for helping with the mupen64plus setup
 
->Thank you very much to nillerusr for developing the open-source version of Half-Life 2 and helping me install it
+>Thank you very much to nillerusr for developing the leaked-source version of Half-Life 2 and helping me install it

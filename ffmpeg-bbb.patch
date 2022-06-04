@@ -1,0 +1,60 @@
+From ff5cc9e8b24fe3d5d8588e45a1ce642c0cb9a07c Mon Sep 17 00:00:00 2001
+From: Robert Kirkman <misternumberone@live.com>
+Date: Sat, 4 Jun 2022 16:32:00 -0500
+Subject: [PATCH 1/1] initial patch to make ffmpeg exclusively compatible with
+ BBB
+
+---
+ configure                | 4 ++--
+ libavdevice/opengl_enc.c | 6 ++++--
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/configure b/configure
+index 5a167613a4..524c4bb645 100755
+--- a/configure
++++ b/configure
+@@ -2185,7 +2185,7 @@ HEADERS_LIST="
+     dirent_h
+     dxgidebug_h
+     dxva_h
+-    ES2_gl_h
++    GLES2_gl2_h
+     gsm_h
+     io_h
+     linux_dma_buf_h
+@@ -6701,7 +6701,7 @@ enabled opencl            && { check_pkg_config opencl OpenCL CL/cl.h clEnqueueN
+ enabled opengl            && { check_lib opengl GL/glx.h glXGetProcAddress "-lGL" ||
+                                check_lib opengl windows.h wglGetProcAddress "-lopengl32 -lgdi32" ||
+                                check_lib opengl OpenGL/gl3.h glGetError "-Wl,-framework,OpenGL" ||
+-                               check_lib opengl ES2/gl.h glGetError "-isysroot=${sysroot} -Wl,-framework,OpenGLES" ||
++                               check_lib opengl GLES2/gl2.h glGetError "-lGLESv2" ||
+                                die "ERROR: opengl not found."
+                              }
+ enabled omx_rpi           && { test_code cc OMX_Core.h OMX_IndexConfigBrcmVideoRequestIFrame ||
+diff --git a/libavdevice/opengl_enc.c b/libavdevice/opengl_enc.c
+index b2140c80be..94ad5a89dc 100644
+--- a/libavdevice/opengl_enc.c
++++ b/libavdevice/opengl_enc.c
+@@ -35,8 +35,8 @@
+ #endif
+ #if HAVE_OPENGL_GL3_H
+ #include <OpenGL/gl3.h>
+-#elif HAVE_ES2_GL_H
+-#include <ES2/gl.h>
++#elif HAVE_GLES2_GL2_H
++#include <GLES2/gl2.h>
+ #else
+ #include <GL/gl.h>
+ #include <GL/glext.h>
+@@ -495,6 +495,8 @@ static int av_cold opengl_load_procedures(OpenGLContext *opengl)
+ #define SelectedGetProcAddress glXGetProcAddress
+ #elif HAVE_WGLGETPROCADDRESS
+ #define SelectedGetProcAddress wglGetProcAddress
++#elif CONFIG_SDL2
++#define SelectedGetProcAddress SDL_GL_GetProcAddress
+ #endif
+ 
+ #define LOAD_OPENGL_FUN(name, type) \
+-- 
+2.30.2
+

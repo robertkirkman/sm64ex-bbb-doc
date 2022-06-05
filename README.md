@@ -256,7 +256,7 @@ $ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
 
 #### Installation:
 1. Copy the `ep2`, `episodic`, `hl2`, `lostcoast`, `platform` and `steam_input` folders from your Half-Life 2 installation on PC into a new folder named `halflife2` on an empty USB flash drive or SD card formatted with a UNIX-like filesystem (such as `ext4`) with at least 10GB of free space, then unmount the drive, `sync`, remove it from your PC and plug it into the BBB. 
->Note: For information on how to obtain a copy of Half-Life 2, see [here](https://store.steampowered.com/app/220/HalfLife_2/).
+>NOTE: For information on how to obtain a copy of Half-Life 2, see [here](https://store.steampowered.com/app/220/HalfLife_2/).
 
 2. On the BBB, identify and mount the drive, where `/dev/XY` is the block device name of your drive's UNIX-like partition:
 ```
@@ -288,18 +288,32 @@ $ ./hl2_launcher
 ### Bad Apple!!
 >The famous Touhou music video
 
-1. Patch and compile FFmpeg, which requires patching to detect and link against our graphics driver, being very careful not to accidentally install any packages that conflict with the BBB's graphics driver:
+#### Prerequisites:
+* BeagleBone Black prepared as directed in steps 1-14 of the above guide
+* 10GB+ MicroSD card or USB flash drive
+* USB A Male to Mini-B Male cord
+* Micro-HDMI Male to HDMI Male cord
+* Display with an HDMI Female port
+
+#### Installation:
+1. On the BBB, identify and mount the drive, where `/dev/XY` is the block device name of your drive's UNIX-like partition:
+```
+$ lsblk
+# mount /dev/XY /mnt
+```
+
+2. Patch and compile FFmpeg, which requires patching to detect and link against our graphics driver, being very careful not to accidentally install any packages that conflict with the BBB's graphics driver:
 ```
 # apt-get install -y libass-dev libgnutls28-dev libmp3lame-dev libvorbis-dev meson ninja-build texinfo yasm libvpx-dev python3-pip
-$ cd
+$ cd /mnt
 $ git clone https://github.com/FFmpeg/FFmpeg.git
 $ cd FFmpeg
 $ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/ffmpeg-bbb.patch | git apply -v
-$ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure \
-  --prefix="$HOME/ffmpeg_build" \
+$ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH=/mnt/FFmpeg/ffmpeg_build/lib/pkgconfig ./configure \
+  --prefix=/mnt/FFmpeg/ffmpeg_build \
   --pkg-config-flags="--static" \
-  --extra-cflags="-I$HOME/ffmpeg_build/include" \
-  --extra-ldflags="-L$HOME/ffmpeg_build/lib" \
+  --extra-cflags="-I/mnt/FFmpeg/ffmpeg_build/include" \
+  --extra-ldflags="-L/mnt/FFmpeg/ffmpeg_build/lib" \
   --extra-libs="-lpthread -lm" \
   --ld="g++" \
   --bindir="$HOME/bin" \
@@ -312,13 +326,23 @@ $ PATH="$HOME/bin:$PATH" make
 $ make install
 ```
 
-2. Install yt-dlp, download the official Bad Apple!! video, and play it using OpenGL (ES 2.0) backend in an SDL window which will automatically convert it to pixel format rgb565 in real time:
+3. Install yt-dlp, download the official Bad Apple!! video, convert it to raw bitmap format, and play it using OpenGL (ES 2.0) backend in an SDL window:
 ```
-$ cd
+$ cd /mnt
 $ python3 -m pip install -U yt-dlp
-$ PATH="$HOME/.local/bin:$PATH" yt-dlp -o "badapple.%(ext)s" https://www.youtube.com/watch?v=i41KoE0iMYU
+$ PATH="$HOME/.local/bin:$PATH" yt-dlp -o badapple.mp4 -f 137 https://www.youtube.com/watch?v=i41KoE0iMYU
+$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -enc_time_base -1 -vsync 2 -vf scale=640:480 -c:v rawvideo badapple_480.rgb
 # pvrsrvctl --start --no-module
-$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -f opengl
+$ PATH="$HOME/bin:$PATH" ffmpeg -video_size 640x480 -r 29.97 -i badapple_480.rgb -f opengl "badapple"
+```
+
+4. You can also optionally increase the BBB's display resolution to 1920x1080, reboot, log back into the BBB, and play the video in higher resolution:
+>NOTE: the BBB can only drive 1080p at 30hz, but Bad Apple!! is only 30 fps.
+```
+# sed -i -e 's/640x480@60e/1920x1080@30e/g' /boot/uEnv.txt
+# reboot
+$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -enc_time_base -1 -vsync 2 -vf scale=640:480 -c:v rawvideo badapple_1080.rgb
+$ PATH="$HOME/bin:$PATH" ffmpeg -video_size 1920x1080 -r 29.97 -i badapple_1080.rgb -f opengl "badapple"
 ```
 
 ### GZDoom

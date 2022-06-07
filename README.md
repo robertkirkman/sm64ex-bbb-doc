@@ -234,6 +234,7 @@ $ make all
 ```
 
 2. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
+>NOTE: for more info and troubleshooting the `pvrsrvctl` command, scroll [here](#initializing-powervr-driver).
 ```
 $ lsusb
 # ~/wii-u-gc-adapter/wii-u-gc-adapter &
@@ -282,6 +283,7 @@ $ ./waf install
 ```
 $ cd /mnt/halflife2
 # pvrsrvctl --start --no-module
+$ export LD_LIBRARY_PATH=/mnt/halflife2/bin
 $ ./hl2_launcher
 ```
 
@@ -326,23 +328,14 @@ $ PATH="$HOME/bin:$PATH" make
 $ make install
 ```
 
-3. Install yt-dlp, download the official Bad Apple!! video, convert it to raw bitmap format, and play it using OpenGL (ES 2.0) backend in an SDL window:
+3. Install yt-dlp, download the official Bad Apple!! video, convert it to grayscale raw bitmap format, and play it using OpenGL (ES 2.0) backend in an SDL window:
 ```
 $ cd /mnt
 $ python3 -m pip install -U yt-dlp
 $ PATH="$HOME/.local/bin:$PATH" yt-dlp -o badapple.mp4 -f 137 https://www.youtube.com/watch?v=i41KoE0iMYU
-$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -enc_time_base -1 -vsync 2 -vf scale=640:480 -c:v rawvideo badapple_480.rgb
+$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -vsync drop -vf scale=640:480 -c:v rawvideo -pix_fmt gray badapple_480_gray.yuv
 # pvrsrvctl --start --no-module
-$ PATH="$HOME/bin:$PATH" ffmpeg -video_size 640x480 -r 29.97 -i badapple_480.rgb -f opengl "badapple"
-```
-
-4. You can also optionally increase the BBB's display resolution to 1920x1080, reboot, log back into the BBB, and play the video in higher resolution:
->NOTE: the BBB can only drive 1080p at 30hz, but Bad Apple!! is only 30 fps.
-```
-# sed -i -e 's/640x480@60e/1920x1080@30e/g' /boot/uEnv.txt
-# reboot
-$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -enc_time_base -1 -vsync 2 -vf scale=640:480 -c:v rawvideo badapple_1080.rgb
-$ PATH="$HOME/bin:$PATH" ffmpeg -video_size 1920x1080 -r 29.97 -i badapple_1080.rgb -f opengl "badapple"
+$ PATH="$HOME/bin:$PATH" ffmpeg -video_size 640x480 -re -pix_fmt gray -i badapple_480_gray.yuv -filter:v fps=30 -f opengl "badapple"
 ```
 
 ### GZDoom
@@ -353,11 +346,10 @@ $ PATH="$HOME/bin:$PATH" ffmpeg -video_size 1920x1080 -r 29.97 -i badapple_1080.
 $ cd
 $ wget -O ~/.config/gzdoom/doom.wad https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
 # apt-get install -y libgme-dev libmpg123-dev timidity
-$ mkdir -p zmusic_build
-$ cd zmusic_build
-$ git clone https://github.com/coelckers/ZMusic.git zmusic
-$ mkdir -p zmusic/build
-$ cd zmusic/build
+$ git clone https://github.com/coelckers/ZMusic.git
+$ cd ZMusic
+$ mkdir build
+$ cd build
 $ export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 $ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 $ make
@@ -367,14 +359,11 @@ $ make
 2.
 ```
 $ cd
-$ mkdir -p gzdoom_build
-$ cd gzdoom_build
 $ git clone https://github.com/coelckers/gzdoom.git
 $ cd gzdoom
-$ git config --local --add remote.origin.fetch +refs/tags/*:refs/tags/*
-$ git pull
 $ mkdir build
 $ cd build
+$ export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 $ cmake .. -DNO_FMOD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 $ make
 # make install
@@ -384,6 +373,27 @@ $ make
 ```
 # pvrsrvctl --start --no-module
 $ gzdoom -gles2_renderer
+```
+
+## Other software that can work with SGX530
+
+### [TODO: try to update guide] Qt/Quick EGLFS and Weston Wayland compositor
+>NOTE: The guide at the link below is very outdated and uses much older versions of the graphics driver and other software than I use in this repository, which are all completely incompatible, and if you try to follow the steps there, you will have to start over again before anything here will work again; however, until I create a replacement, it is very good for historical reference and helped me out a lot when I started trying to use the BBB.
+
+Years ago, Remi Avignon's eLinux wiki page was the best SGX530 tutorial, before I created this repository. It includes directions for using Qt/Quick EGLFS and Weston compositor (separately) on BBB, which I have verified do work if you carefully use the exact versions he mentions of all the software involved. If you are interested, you can read it [here](https://elinux.org/BeagleBoneBlack/SGX_%2B_Qt_EGLFS_%2B_Weston).
+
+### [TODO: fill with all working demos] Small OpenGL ES 1.1/2.0 Demos
+>Very useful for troubleshooting, learning or just using as screensavers
+1. kmscube
+```
+$ cd
+$ git clone https://github.com/robertkirkman/kmscube.git
+$ cd kmscube
+$ meson setup build
+$ meson compile -C build
+$ cd build
+# pvrsrvctl --start --no-module
+$ ./kmscube
 ```
 
 ## Other... stuff ig
@@ -416,6 +426,44 @@ $ pactl load-module module-native-protocol-tcp
 $ export PULSE_SERVER=localhost
 $ sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
+
+### Initializing PowerVR Driver
+Most graphics drivers handle their equivalents to this program robustly and automatically, and if you would like, you may automate this with systemd; however, `pvrsrvctl` is very buggy, and I think it's important to be familiar with this process for troubleshooting and understanding purposes. Here are some common errors that a lot of OpenGL ES 2.0 software will print if you try to execute it before the PowerVR driver is initialized:
+```
+PVR:(Error): PVRSRVBridgeCall: Failed to access device.  Function ID:3223086849 (strerror returns no value.). [0, ]
+PVR:(Error): PVRSRVEnumerateDevices: BridgeCall failed [0, ]
+PVR:(Error): PVRSRVConnect: Unable to enumerate devices. [0, ]
+PVR:(Error): Couldn't connect to services [0, ]
+PVR:(Error): PVRDRIEGLGlobalDataInit: PVR Services initialisation failed [0, ]
+PVR:(Error): PVRDRICreateScreenImpl: Couldn't create EGL global data [0, ]
+MESA-LOADER: failed to open kms_swrast (search paths /usr/lib/dri)
+failed to load driver: kms_swrast
+MESA-LOADER: failed to open swrast (search paths /usr/lib/dri)
+failed to load swrast driver
+Unable to create default window: EGL not initialized
+Cannot create default SDL window.
+```
+
+To check whether the SGX530 is ready to execute EGL and OpenGL ES 2.0 calls, use this:
+```
+# dmesg | grep -e PVR -e pvr
+```
+The first thing you should see is this:
+```
+pvrsrvkm: loading out-of-tree module taints kernel.
+[drm] Initialized pvr 1.17.4948957 20110701 for 56000000.gpu on minor 1
+```
+If you don't see this or the numbers are different, unfortunately you might have the wrong boot image, device tree, kernel, or kernel module installed. In that case, review steps 1-12 again and make sure you didn't miss anything.
+
+The next thing you should see is this:
+```
+PVR_K: UM DDK-(4948957) and KM DDK-(4948957) match. [ OK ]
+```
+If you don't, then `pvrsrvctl` has not been run yet. It needs to be run only once each time the BBB boots. Use this command to run it:
+```
+# pvrsrvctl --start --no-module
+```
+These arguments work the best for me, and if you try to use `pvrsrvctl` a different way, unfortunately it might not work correctly. If you want to experiment or improve on this method, though, feel free to. After doing this, you should now see the "`UM and KM match OK`" message in your kernel log, and can proceed to use the GPU for as long as this BBB stays on. If you don't, you might have the wrong user-space driver installed, so you should carefully review step 12.
 
 ### All I want to do is turn off the stupid irritating flashing LEDs
 ```

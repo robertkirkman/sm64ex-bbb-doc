@@ -303,7 +303,7 @@ $ ./hl2_launcher
 ### Bad Apple!!
 >The famous Touhou music video
 
-[![demo](https://i1.ytimg.com/vi/Bh3-1u7sITI/hqdefault.jpg)](https://www.youtube.com/watch?v=Bh3-1u7sITI "Bad Apple!! on BeagleBone Black")
+[![demo](https://i.ytimg.com/vi_webp/Bh3-1u7sITI/maxresdefault.webp)](https://www.youtube.com/watch?v=Bh3-1u7sITI "Bad Apple!! on BeagleBone Black")
 
 #### Prerequisites:
 * BeagleBone Black prepared as directed in steps 1-14 of the above guide

@@ -1,5 +1,7 @@
-# How to play Super Mario 64 PC port on BeagleBone Black
+# How to play Super Mario 64 on BeagleBone Black
 #### This is also, by necessity, a guide on how to use the BBB's Imagination Technologies PowerVR SGX530 GPU
+
+[![demo](https://i.ytimg.com/vi_webp/OaUrnq9Qi7U/maxresdefault.webp)](https://youtu.be/OaUrnq9Qi7U?t=66 "sm64ex on BeagleBone Black with hardware 3D acceleration")
 
 ### Prerequisites:
 * GNU/Linux PC with an internet connection, a MicroSD card slot and a USB A Female port
@@ -110,7 +112,7 @@ $ ssh debian@192.168.6.2
 
 12. Now on the BBB again, download and install the proprietary user-space portion of the PowerVR SGX530 GPU's graphics driver:
 
->NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to [hardware limitations](https://software-dl.ti.com/processor-sdk-linux/esd/docs/latest/linux/Foundational_Components/Graphics/AM3_Beagle_Bone_Black_Configuration.html) (dont follow the directions there, they are outdated), for strictly KMS/DRM contexts, and silently conflicts with any other implementation of OpenGL, EGL or GBM (such as those in the Debian official repositories). In the present day, open-source user-space drivers for [PowerVR Rogue GPUs](https://gitlab.freedesktop.org/mesa/mesa/-/tree/main/src/imagination) and [PowerVR Series1 3D accelerators](https://github.com/powervr-graphics/PowerVR-Series1) exist, but these were designed in the 2010s and 1990s, respectively. The PowerVR SGX530 was designed in the 2000s, and as of yet no user-space source code for its drivers is publicly accessible.
+>NOTE: This driver provides OpenGL ES 2.0, EGL 1.5 and a hard-forked GBM that only functions with the RGB565 pixel format due to [hardware limitations](https://software-dl.ti.com/processor-sdk-linux/esd/docs/latest/linux/Foundational_Components/Graphics/AM3_Beagle_Bone_Black_Configuration.html) (don't follow the directions there, they are outdated), for strictly KMS/DRM contexts, and silently conflicts with any other implementation of OpenGL, EGL or GBM (such as those in the Debian official repositories). In the present day, open-source user-space drivers for [PowerVR Rogue GPUs](https://gitlab.freedesktop.org/mesa/mesa/-/tree/main/src/imagination) and [PowerVR Series1 3D accelerators](https://github.com/powervr-graphics/PowerVR-Series1) exist, but these were designed in the 2010s and 1990s, respectively. The PowerVR SGX530 was designed in the 2000s, and as of yet no user-space source code for its drivers is publicly accessible.
 
 ```
 $ git clone -b 1.17.4948957-next git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git
@@ -154,7 +156,7 @@ $ make
 # make install
 ```
 
->NOTE: You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there.
+>NOTE: You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there. Currently, [mupen64plus](#mupen64plus) offers better in-game performance than sm64ex.
 
 15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
 >NOTE: For information on how to obtain a Super Mario 64 ROM, see [here](https://github.com/sanni/cartreader).
@@ -200,7 +202,12 @@ $ sm64ex/build/us_pc/sm64.us.f3dex2e
 ### mupen64plus
 >NOTE: For reasons beyond my current understanding, with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as there is no need for mods that only work on PC port, not real console - or if there is need for mods that only work on console and emulator.
 
-1. Download, compile and install mupen64plus and the `gles2n64` video plugin for it:
+#### Prerequisites:
+* Same as [sm64ex](#prerequisites)
+
+#### Installation:
+
+1. Download, compile and install mupen64plus and its core plugins:
 >NOTE: I have deliberately unrolled the intended Bash loops to call attention to mupen64plus' not-fully-sane build system and make it easier to understand.
 ```
 # apt-get install -y zlib1g-dev libpng-dev libfreetype-dev nasm libboost-dev libboost-filesystem-dev
@@ -210,7 +217,6 @@ $ git clone https://github.com/mupen64plus/mupen64plus-ui-console.git
 $ git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git
 $ git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git
 $ git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git
-$ git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
 $ export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 $ cd ~/mupen64plus-core/projects/unix
 $ make all
@@ -227,13 +233,20 @@ $ make all
 $ cd ~/mupen64plus-rsp-hle/projects/unix
 $ make all
 # make install
+```
+
+2. Download, compile and install the `gles2n64` video plugin for mupen64plus, then adjust its system-wide configuration to match the system screen resolution:
+```
+$ cd
+$ git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
 $ cd ~/mupen64plus-video-gles2n64/projects/unix
+$ export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 $ make all
 # make install
 # sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
 ```
 
-2. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
+3. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
 >NOTE: for more info and troubleshooting the `pvrsrvctl` command, scroll [here](#initializing-powervr-driver).
 ```
 $ lsusb
@@ -242,7 +255,7 @@ $ lsusb
 $ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
 ```
 
-### Half-Life 2
+### [TODO: unfinished] Half-Life 2
 #### Prerequisites:
 * GNU/Linux PC with an internet connection and a MicroSD card slot or USB A Female port
 * BeagleBone Black prepared as directed in steps 1-14 of the above guide
@@ -290,28 +303,31 @@ $ ./hl2_launcher
 ### Bad Apple!!
 >The famous Touhou music video
 
+[![demo](https://i1.ytimg.com/vi/Bh3-1u7sITI/hqdefault.jpg)](https://www.youtube.com/watch?v=Bh3-1u7sITI "Bad Apple!! on BeagleBone Black")
+
 #### Prerequisites:
 * BeagleBone Black prepared as directed in steps 1-14 of the above guide
-* 10GB+ MicroSD card or USB flash drive
+* High-speed 10GB+ MicroSD card or USB flash drive
 * USB A Male to Mini-B Male cord
 * Micro-HDMI Male to HDMI Male cord
 * Display with an HDMI Female port
 
 #### Installation:
 1. On the BBB, identify and mount the drive, where `/dev/XY` is the block device name of your drive's UNIX-like partition:
+>NOTE: The BBB has no hardware video decoder and a slow CPU, so to make this possible, the video is converted into a raw format that doesn't require decoding to play on a screen. This vastly increases the file size and moves the primary performance bottleneck to drive read speed. Make sure you are using a fast drive whose arbitrary read speed nears or exceeds the ~25MB/s maximum transfer speed of the SD card slot or the ~50MB/s maximum speed of the USB port, otherwise your video might stutter. You can check this by installing `hdparm` with `# apt-get install -y hdparm` and then benchmarking the drive with `# hdparm -t /dev/X` where `X` is the block device name of the drive.
 ```
 $ lsblk
 # mount /dev/XY /mnt
 ```
 
-2. Patch and compile FFmpeg, which requires patching to detect and link against our graphics driver, being very careful not to accidentally install any packages that conflict with the BBB's graphics driver:
+2. Download, patch and compile FFmpeg, being careful not to install any packages that conflict with the BBB's graphics driver:
 ```
 # apt-get install -y libass-dev libgnutls28-dev libmp3lame-dev libvorbis-dev meson ninja-build texinfo yasm libvpx-dev python3-pip
 $ cd /mnt
 $ git clone https://github.com/FFmpeg/FFmpeg.git
 $ cd FFmpeg
 $ curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/ffmpeg-bbb.patch | git apply -v
-$ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH=/mnt/FFmpeg/ffmpeg_build/lib/pkgconfig ./configure \
+$ PKG_CONFIG_PATH=/mnt/FFmpeg/ffmpeg_build/lib/pkgconfig ./configure \
   --prefix=/mnt/FFmpeg/ffmpeg_build \
   --pkg-config-flags="--static" \
   --extra-cflags="-I/mnt/FFmpeg/ffmpeg_build/include" \
@@ -324,21 +340,23 @@ $ PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH=/mnt/FFmpeg/ffmpeg_build/lib/pkgconfig 
   --enable-libopus \
   --enable-libvorbis \
   --enable-opengl
-$ PATH="$HOME/bin:$PATH" make
+$ make
 $ make install
 ```
 
-3. Install yt-dlp, download the official Bad Apple!! video, convert it to grayscale raw bitmap format, and play it using OpenGL (ES 2.0) backend in an SDL window:
+3. Install yt-dlp, download the official Bad Apple!! video, convert it to grayscale raw bitmap video format, and play it using OpenGL (ES 2.0) backend in an SDL window:
+>NOTE: For some reason, without intervention the audio is delayed by almost 1 second, so I manually offset the video to improve the experience.
 ```
 $ cd /mnt
 $ python3 -m pip install -U yt-dlp
-$ PATH="$HOME/.local/bin:$PATH" yt-dlp -o badapple.mp4 -f 137 https://www.youtube.com/watch?v=i41KoE0iMYU
-$ PATH="$HOME/bin:$PATH" ffmpeg -i badapple.mp4 -vsync drop -vf scale=640:480 -c:v rawvideo -pix_fmt gray badapple_480_gray.yuv
+$ yt-dlp -o badapple_video.webm -f 248 https://www.youtube.com/watch?v=i41KoE0iMYU
+$ yt-dlp -o badapple_audio.webm -f 251 https://www.youtube.com/watch?v=i41KoE0iMYU
+$ ffmpeg -itsoffset 0.83 -i badapple_video.webm -i badapple_audio.webm -vf scale=640:480 -c:v rawvideo -c:a copy -pix_fmt gray -f matroska badapple_480_gray.mkv
 # pvrsrvctl --start --no-module
-$ PATH="$HOME/bin:$PATH" ffmpeg -video_size 640x480 -re -pix_fmt gray -i badapple_480_gray.yuv -filter:v fps=30 -f opengl "badapple"
+$ ffmpeg -i badapple_480_gray.mkv -f opengl "badapple" -f alsa default
 ```
 
-### GZDoom
+### [TODO: unfinished] GZDoom
 
 1.
 >NOTE: `libopus-dev` conflict with Half-Life 2
@@ -464,6 +482,9 @@ If you don't, then `pvrsrvctl` has not been run yet. It needs to be run only onc
 # pvrsrvctl --start --no-module
 ```
 These arguments work the best for me, and if you try to use `pvrsrvctl` a different way, unfortunately it might not work correctly. If you want to experiment or improve on this method, though, feel free to. After doing this, you should now see the "`UM and KM match OK`" message in your kernel log, and can proceed to use the GPU for as long as this BBB stays on. If you don't, you might have the wrong user-space driver installed, so you should carefully review step 12.
+
+### [TODO: update guide] Libreboot
+The BeagleBone Black is one of the most open-source hardware affordable computers created before the market availability of RISC-V. For this reason, it is popular as a bootstrap for improving the potential user Freedom of more performant, more proprietary devices using the [Libreboot](https://libreboot.org/) fully open source motherboard firmware project. See [here](https://libreboot.org/docs/install/spi.html#beaglebone-black-bbb) for their guide to flashing compatible motherboard firmware chips using the BBB's SPI port (may be outdated).
 
 ### All I want to do is turn off the stupid irritating flashing LEDs
 ```

@@ -266,7 +266,7 @@ cd
 
 3. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
 > [!NOTE]
-> For more info about and troubleshooting for the `pvrsrvctl` command, scroll [here](#initializing-powervr-driver).
+> For more info about and troubleshooting for the `pvrsrvctl` command, scroll [here](#initializing-the-powervr-driver).
 ```bash
 lsusb
 sudo ~/wii-u-gc-adapter/wii-u-gc-adapter &
@@ -438,9 +438,6 @@ Years ago, Remi Avignon's eLinux wiki page was the best SGX530 tutorial, before 
 
 ### [TODO: fill with all working demos] Small OpenGL ES 1.1/2.0 Demos
 
-> [!NOTE]
-> Very useful for troubleshooting or learning
-
 1. [TODO: rebase] kmscube
 ```bash
 cd
@@ -494,7 +491,7 @@ These arguments work the best for me, and if you try to use `pvrsrvctl` a differ
 ## Other things not related to graphics
 
 ### Stream audio from BBB to PC using pulseaudio `module_native_protocol_tcp`
-> [!NOTE]
+> [!WARNING]
 > This uses a lot of CPU and is probably not a good idea.
 
 1. BeagleBone Black:

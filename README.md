@@ -35,12 +35,12 @@ lsblk
 sudo dd if=am335x-eMMC-flasher-debian-11.11-minimal-armhf-2024-09-07-2gb.img of=/dev/X bs=1M status=progress oflag=sync
 ```
 
-4. Remove the MicroSD card from the PC, insert it into the BBB, and plug the BBB into the PC using the USB cord. The BBB will automatically turn on, boot from the MicroSD card, install Debian into the BBB's internal flash, and turn off again. Once it turns off, remove the MicroSD card and push the BBB's power button to turn it back on. 
+3. Remove the MicroSD card from the PC, insert it into the BBB, and plug the BBB into the PC using the USB cord. The BBB will automatically turn on, boot from the MicroSD card, install Debian into the BBB's internal flash, and turn off again. Once it turns off, remove the MicroSD card and push the BBB's power button to turn it back on. 
 
 > [!NOTE]
 > If you used a non-flasher image, the BBB will not overwrite the internal flash or turn off, instead leave the MicroSD card inserted and proceed.
 
-5. The BBB will take some time to boot. Once it finishes, on the PC, enable ip forwarding and set the RNDIS network adapter to which address 192.168.7.1 has been assigned to shared to other computers.
+4. The BBB will take some time to boot. Once it finishes, on the PC, enable ip forwarding and set the RNDIS network adapter to which address 192.168.7.1 has been assigned to shared to other computers.
 
 > [!TIP]
 > If you do this, you would need to identify your network device names and network configuration and replace this with your own, but this is optional, since you can use an ethernet cord for internet access instead if available.
@@ -53,7 +53,7 @@ sudo iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 sudo iptables -A FORWARD -i enp0s20u12u4 -o eno1 -j ACCEPT
 ```
 
-6. Log into the BBB, using the default password `temppwd`:
+5. Log into the BBB, using the default password `temppwd`:
 
 > [!NOTE]
 > Each time the BBB boots a clean image, it regenerates its `ssh` host keys. If you reach this step multiple times on the same PC, you might need to manage your `~/.ssh/known_hosts` file accordingly.
@@ -62,27 +62,27 @@ sudo iptables -A FORWARD -i enp0s20u12u4 -o eno1 -j ACCEPT
 ssh debian@192.168.6.2
 ```
 
-7. Now on the BBB, choose a new secure password for the `debian` user:
+6. Now on the BBB, choose a new secure password for the `debian` user:
 
 ```bash
 sudo passwd debian
 ```
 
-8. Route internet traffic over the other virtual adapter and apply a DNS server address, replacing `1.1.1.1` with the DNS address of your choice:
+7. Route internet traffic over the other virtual adapter and apply a DNS server address, replacing `1.1.1.1` with the DNS address of your choice:
 
 ```bash
 sudo sed -i '/^Addr.*/a Gateway=192.168.7.1\nDNS=1.1.1.1' /etc/systemd/network/usb0.network
 sudo systemctl restart systemd-networkd
 ```
 
-9. Set the system time zone, replacing `America/Chicago` with your preferred choice, and sync the system time with 0.debian.pool.ntp.org:
+8. Set the system time zone, replacing `America/Chicago` with your preferred choice, and sync the system time with 0.debian.pool.ntp.org:
 
 ```bash
 sudo timedatectl set-timezone America/Chicago
 sudo systemctl restart systemd-timesyncd
 ```
 
-10. Check for updates, update Debian, and install all the precompiled dependencies needed, then reboot the BBB; these include the kernel module for the SGX530, runtime dependencies of the user-space portion of the graphics driver, and build dependencies for SDL2:
+9. Check for updates, update Debian, and install all the precompiled dependencies needed, then reboot the BBB; these include the kernel module for the SGX530, runtime dependencies of the user-space portion of the graphics driver, and build dependencies for SDL2:
 
 ```bash
 sudo apt update
@@ -104,13 +104,13 @@ sudo apt install -y bbb.io-kernel-5.10-ti-am335x \
 sudo reboot
 ```
 
-11. Log into the BBB again, using your new password:
+10. Log into the BBB again, using your new password:
 
 ```bash
 ssh debian@192.168.6.2
 ```
 
-12. Now on the BBB again, download and install the proprietary user-space portion of the PowerVR SGX530 GPU's graphics driver:
+11. Now on the BBB again, download and install the proprietary user-space portion of the PowerVR SGX530 GPU's graphics driver:
 
 > [!NOTE]
 > This driver provides OpenGL ES 2.0, EGL 1.5 and a forked GBM that only functions with the RGB565 pixel format due to [hardware limitations](https://software-dl.ti.com/processor-sdk-linux/esd/docs/latest/linux/Foundational_Components/Graphics/AM3_Beagle_Bone_Black_Configuration.html) (don't follow the directions there, they are outdated), for strictly KMS/DRM contexts, and silently conflicts with any other implementation of OpenGL, EGL or GBM (such as those in the Debian official repositories). In the present day, open-source user-space drivers for [PowerVR Rogue GPUs](https://gitlab.freedesktop.org/mesa/mesa/-/tree/main/src/imagination) and [PowerVR Series1 3D accelerators](https://github.com/powervr-graphics/PowerVR-Series1) exist, but these were designed in the 2010s and 1990s, respectively. The PowerVR SGX530 was designed in the 2000s, and as of yet no user-space source code for its drivers is publicly accessible.
@@ -122,7 +122,7 @@ sudo TARGET_PRODUCT=ti335x make install
 cd
 ```
 
-13. Download the SDL development repository and patch it with changes I designed that make it exclusively compatible with BeagleBone Black:
+12. Download the SDL development repository and patch it with changes I designed that make it exclusively compatible with BeagleBone Black:
 
 ```bash
 git clone -b SDL2 https://github.com/libsdl-org/SDL.git
@@ -130,7 +130,7 @@ cd SDL
 curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/sdl-bbb.patch | git apply -v
 ```
 
-14. Compile and install SDL:
+13. Compile and install SDL:
 
 ```bash
 mkdir build
@@ -160,51 +160,50 @@ export CFLAGS="-O3 -march=armv7-a -marm -mfpu=neon -mtune=cortex-a8"
   --disable-alsa-shared
 make
 sudo make install
+cd
 ```
 
 > [!NOTE]
 > You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there. Currently, [mupen64plus](#mupen64plus) offers better in-game performance than sm64ex.
 
-15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
+14. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
 
 > [!NOTE]
 > To see how to obtain a Super Mario 64 ROM, click [here](https://github.com/sanni/cartreader).
 
 ```bash
-cd
 git clone https://github.com/sm64pc/sm64ex.git
 cp baserom.us.z64 sm64ex
 ```
 
-16. Patch the Super Mario 64 PC port with minor changes that improve the compilation experience on BBB, then compile it:
+15. Patch the Super Mario 64 PC port with minor changes that improve the compilation experience on BBB, then compile it:
 
 ```bash
 cd sm64ex 
 curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/sm64ex-bbb.patch | git apply -v
 TARGET_BBB=1 BETTERCAMERA=1 EXTERNAL_DATA=1 TEXTURE_FIX=1 make
+cd
 ```
 
-17. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile, and run the driver. You only need to do this if you are using a GameCube Controller Adapter with vendor and device ID `057e:0337` as it appears in `lsusb`:
+16. Prepare an input device. As an example I use an official Nintendo GameCube controller with the official Nintendo USB GameCube Controller Adapter and ToadKing's open-source user-space driver. Plug the controller into the adapter, Connect the adapter to the BBB's USB A port via the black connector, then download, compile, and run the driver. You only need to do this if you are using a GameCube Controller Adapter with vendor and device ID `057e:0337` as it appears in `lsusb`:
 
 ```bash
-lsusb
-cd
+lsusb | grep '057e:0337'
 git clone https://github.com/ToadKing/wii-u-gc-adapter.git
 cd wii-u-gc-adapter
 export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 make
 sudo ./wii-u-gc-adapter &
+cd
 ```
 
-18. Connect the display to the BBB using the HDMI cord, then initialize the user-space graphics driver and run the Super Mario 64 PC port:
+17. Connect the display to the BBB using the HDMI cord, then initialize the user-space graphics driver and run the Super Mario 64 PC port:
 
 > [!NOTE]
 > To hear the game audio, your display must have speakers or a 3.5mm jack for HDMI audio.
 
 ```bash
-cd
 sudo pvrsrvctl --start --no-module
-exit
 sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
 > [!NOTE]
@@ -228,43 +227,46 @@ sudo apt install -y zlib1g-dev \
                     nasm \
                     libboost-dev \
                     libboost-filesystem-dev
-cd
 git clone https://github.com/mupen64plus/mupen64plus-core.git
 git clone https://github.com/mupen64plus/mupen64plus-ui-console.git
 git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git
 git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git
 git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git
 export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
-cd ~/mupen64plus-core/projects/unix
+cd mupen64plus-core/projects/unix
 make all
 sudo make install
-cd ~/mupen64plus-ui-console/projects/unix
+cd -
+cd mupen64plus-ui-console/projects/unix
 make all
 sudo make install
-cd ~/mupen64plus-audio-sdl/projects/unix
+cd -
+cd mupen64plus-audio-sdl/projects/unix
 make all
 sudo make install
-cd ~/mupen64plus-input-sdl/projects/unix
+cd -
+cd mupen64plus-input-sdl/projects/unix
 make all
 sudo make install
-cd ~/mupen64plus-rsp-hle/projects/unix
+cd -
+cd mupen64plus-rsp-hle/projects/unix
 make all
 sudo make install
+cd -
 ```
 
 2. Download, compile and install the `gles2n64` video plugin for mupen64plus, then adjust its system-wide configuration to match the system screen resolution:
 ```bash
-cd
 git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
-cd ~/mupen64plus-video-gles2n64/projects/unix
+cd mupen64plus-video-gles2n64/projects/unix
 export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 make all
 sudo make install
 sudo sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
-cd
+cd -
 ```
 
-3. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 17 above:
+3. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 16 above:
 > [!NOTE]
 > For more info about and troubleshooting for the `pvrsrvctl` command, scroll [here](#initializing-the-powervr-driver).
 ```bash
@@ -277,7 +279,7 @@ mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
 ### [TODO: unfinished] Half-Life 2
 #### Prerequisites:
 * GNU/Linux PC with an internet connection and a MicroSD card slot or USB A Female port
-* BeagleBone Black prepared as directed in steps 1-14 of the above guide
+* BeagleBone Black prepared as directed in steps 1-13 of the above guide
 * 10GB+ MicroSD card or USB flash drive depending on the ports available on the PC
 * USB A Male to Mini-B Male cord
 * Micro-HDMI Male to HDMI Male cord
@@ -331,7 +333,7 @@ sudo pvrsrvctl --start --no-module
 [![demo](https://i.ytimg.com/vi_webp/Bh3-1u7sITI/maxresdefault.webp)](https://www.youtube.com/watch?v=Bh3-1u7sITI "Bad Apple!! on BeagleBone Black")
 
 #### Prerequisites:
-* BeagleBone Black prepared as directed in steps 1-14 of the above guide
+* BeagleBone Black prepared as directed in steps 1-13 of the above guide
 * High-speed 10GB+ MicroSD card or USB flash drive
 * USB A Male to Mini-B Male cord
 * Micro-HDMI Male to HDMI Male cord
@@ -352,6 +354,7 @@ sudo apt install -y libass-dev \
                     libgnutls28-dev \
                     libmp3lame-dev \
                     libvorbis-dev \
+                    libopus-dev \
                     meson \
                     ninja-build \
                     texinfo \
@@ -440,7 +443,6 @@ Years ago, Remi Avignon's eLinux wiki page was the best SGX530 tutorial, before 
 
 1. [TODO: rebase] kmscube
 ```bash
-cd
 git clone https://github.com/robertkirkman/kmscube.git
 cd kmscube
 meson setup build
@@ -476,7 +478,7 @@ The first thing you should see is this:
 pvrsrvkm: loading out-of-tree module taints kernel.
 [drm] Initialized pvr 1.17.4948957 20110701 for 56000000.gpu on minor 1
 ```
-If you don't see this or the numbers are different, unfortunately you might have the wrong boot image, device tree, kernel, or kernel module installed. In that case, review steps 1-12 again and make sure you didn't miss anything.
+If you don't see this or the numbers are different, unfortunately you might have the wrong boot image, device tree, kernel, or kernel module installed. In that case, review steps 1-11 again and make sure you didn't miss anything.
 
 The next thing you should see is this:
 ```
@@ -486,7 +488,7 @@ If you don't, then `pvrsrvctl` has not been run yet. It needs to be run only onc
 ```bash
 sudo pvrsrvctl --start --no-module
 ```
-These arguments work the best for me, and if you try to use `pvrsrvctl` a different way, unfortunately it might not work correctly. If you want to experiment or improve on this method, though, feel free to. After doing this, you should now see the "`UM and KM match OK`" message in your kernel log, and can proceed to use the GPU for as long as this BBB stays on. If you don't, you might have the wrong user-space driver installed, so you should carefully review step 12.
+These arguments work the best for me, and if you try to use `pvrsrvctl` a different way, unfortunately it might not work correctly. If you want to experiment or improve on this method, though, feel free to. After doing this, you should now see the "`UM and KM match OK`" message in your kernel log, and can proceed to use the GPU for as long as this BBB stays on. If you don't, you might have the wrong user-space driver installed, so you should carefully review step 11.
 
 ## Other things not related to graphics
 

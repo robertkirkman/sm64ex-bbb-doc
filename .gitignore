@@ -2,3 +2,5 @@ tmproot
 .bash_history
 am335*
 badapple*
+*.code-workspace
+ffmpeg_notes.md

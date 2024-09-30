@@ -1,94 +1,56 @@
-From 90c4e571561cf8c858b6020c2be411e0ca9b7a3c Mon Sep 17 00:00:00 2001
-From: Robert Kirkman <robert.kirkman@ttu.edu>
-Date: Tue, 1 Mar 2022 15:55:30 -0600
-Subject: [PATCH 1/1] force KMSDRM backend to RGB565 pixel format for
- compatibility with BBB
-
----
- src/video/kmsdrm/SDL_kmsdrmvideo.c | 28 +++++++++++++++++-----------
- 1 file changed, 17 insertions(+), 11 deletions(-)
-
-diff --git a/src/video/kmsdrm/SDL_kmsdrmvideo.c b/src/video/kmsdrm/SDL_kmsdrmvideo.c
-index fd3a3cd63..1660e224d 100644
 --- a/src/video/kmsdrm/SDL_kmsdrmvideo.c
 +++ b/src/video/kmsdrm/SDL_kmsdrmvideo.c
-@@ -334,9 +334,9 @@ KMSDRM_FBInfo *
- KMSDRM_FBFromBO(_THIS, struct gbm_bo *bo)
- {
-     SDL_VideoData *viddata = ((SDL_VideoData *)_this->driverdata);
--    unsigned w,h;
-+    unsigned w, h, format;
-     int ret;
--    Uint32 stride, handle;
-+    Uint32 handles[4] = {0}, offsets[4] = {0}, strides[4] = {0};
- 
-     /* Check for an existing framebuffer */
-     KMSDRM_FBInfo *fb_info = (KMSDRM_FBInfo *)KMSDRM_gbm_bo_get_user_data(bo);
-@@ -359,17 +359,19 @@ KMSDRM_FBFromBO(_THIS, struct gbm_bo *bo)
-     /* Create framebuffer object for the buffer */
-     w = KMSDRM_gbm_bo_get_width(bo);
-     h = KMSDRM_gbm_bo_get_height(bo);
--    stride = KMSDRM_gbm_bo_get_stride(bo);
--    handle = KMSDRM_gbm_bo_get_handle(bo).u32;
--    ret = KMSDRM_drmModeAddFB(viddata->drm_fd, w, h, 24, 32, stride, handle,
--                                  &fb_info->fb_id);
-+    format = KMSDRM_gbm_bo_get_format(bo);
-+    strides[0] = KMSDRM_gbm_bo_get_stride(bo);
-+    handles[0] = KMSDRM_gbm_bo_get_handle(bo).u32;
-+    /* IT PowerVR SGX530 on BeagleBone Black requires drmModeAddFB2() - the pixel format must be specified. */
-+    ret = KMSDRM_drmModeAddFB2(viddata->drm_fd, w, h, format, handles, strides, offsets,
-+                               &fb_info->fb_id, 0);
-     if (ret) {
-       SDL_free(fb_info);
-       return NULL;
+@@ -388,9 +388,14 @@ KMSDRM_FBInfo *KMSDRM_FBFromBO(_THIS, struct gbm_bo *bo)
+         rc = KMSDRM_drmModeAddFB2WithModifiers(viddata->drm_fd, w, h, format, handles, strides, offsets, modifiers, &fb_info->fb_id, flags);
      }
  
-     SDL_LogDebug(SDL_LOG_CATEGORY_VIDEO, "New DRM FB (%u): %ux%u, stride %u from BO %p",
--                 fb_info->fb_id, w, h, stride, (void *)bo);
-+                 fb_info->fb_id, w, h, strides[0], (void *)bo);
++    strides[0] = KMSDRM_gbm_bo_get_stride(bo);
++    handles[0] = KMSDRM_gbm_bo_get_handle(bo).u32;
++
++    if (rc < 0) {
++        rc = KMSDRM_drmModeAddFB2(viddata->drm_fd, w, h, format, handles, strides, offsets, &fb_info->fb_id, flags);
++    }
++
+     if (rc < 0) {
+-        strides[0] = KMSDRM_gbm_bo_get_stride(bo);
+-        handles[0] = KMSDRM_gbm_bo_get_handle(bo).u32;
+         rc = KMSDRM_drmModeAddFB(viddata->drm_fd, w, h, 24, 32, strides[0], handles[0], &fb_info->fb_id);
+     }
  
-     /* Associate our DRM framebuffer with this buffer object */
-     KMSDRM_gbm_bo_set_user_data(bo, fb_info, KMSDRM_FBDestroyCallback);
-@@ -690,7 +692,8 @@ KMSDRM_AddDisplay (_THIS, drmModeConnector *connector, drmModeRes *resources) {
+@@ -901,7 +906,8 @@ static void KMSDRM_AddDisplay(_THIS, drmModeConnector *connector, drmModeRes *re
      display.desktop_mode.w = dispdata->mode.hdisplay;
      display.desktop_mode.h = dispdata->mode.vdisplay;
      display.desktop_mode.refresh_rate = dispdata->mode.vrefresh;
 -    display.desktop_mode.format = SDL_PIXELFORMAT_ARGB8888;
-+    /* IT PowerVR SGX530 on BeagleBone Black only supports GBM pixel format RGB565. */
++    /* TI BeagleBone Black with PowerVR SGX530 only supports pixel format RGB565 otherwise temporary hardware failure! */
 +    display.desktop_mode.format = SDL_PIXELFORMAT_RGB565;
      display.desktop_mode.driverdata = modedata;
      display.current_mode = display.desktop_mode;
  
-@@ -977,7 +980,8 @@ KMSDRM_CreateSurfaces(_THIS, SDL_Window * window)
+@@ -1193,7 +1199,7 @@ int KMSDRM_CreateSurfaces(_THIS, SDL_Window *window)
      SDL_VideoDisplay *display = SDL_GetDisplayForWindow(window);
      SDL_DisplayData *dispdata = (SDL_DisplayData *)display->driverdata;
  
 -    uint32_t surface_fmt = GBM_FORMAT_ARGB8888;
-+    /* IT PowerVR SGX530 on BeagleBone Black only supports GBM pixel format RGB565. */
 +    uint32_t surface_fmt = GBM_FORMAT_RGB565;
      uint32_t surface_flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING;
  
      EGLContext egl_context;
-@@ -1003,7 +1007,8 @@ KMSDRM_CreateSurfaces(_THIS, SDL_Window * window)
+@@ -1219,7 +1225,7 @@ int KMSDRM_CreateSurfaces(_THIS, SDL_Window *window)
      display->current_mode.w = dispdata->mode.hdisplay;
      display->current_mode.h = dispdata->mode.vdisplay;
      display->current_mode.refresh_rate = dispdata->mode.vrefresh;
 -    display->current_mode.format = SDL_PIXELFORMAT_ARGB8888;
-+    /* IT PowerVR SGX530 on BeagleBone Black only supports GBM pixel format RGB565. */
 +    display->current_mode.format = SDL_PIXELFORMAT_RGB565;
  
      windata->gs = KMSDRM_gbm_surface_create(viddata->gbm_dev,
-                       dispdata->mode.hdisplay, dispdata->mode.vdisplay,
-@@ -1119,7 +1124,8 @@ KMSDRM_GetDisplayModes(_THIS, SDL_VideoDisplay * display)
+                                             dispdata->mode.hdisplay, dispdata->mode.vdisplay,
+@@ -1366,7 +1372,7 @@ void KMSDRM_GetDisplayModes(_THIS, SDL_VideoDisplay *display)
          mode.w = conn->modes[i].hdisplay;
          mode.h = conn->modes[i].vdisplay;
          mode.refresh_rate = conn->modes[i].vrefresh;
 -        mode.format = SDL_PIXELFORMAT_ARGB8888;
-+        /* IT PowerVR SGX530 on BeagleBone Black only supports GBM pixel format RGB565. */
 +        mode.format = SDL_PIXELFORMAT_RGB565;
          mode.driverdata = modedata;
  
          if (!SDL_AddDisplayMode(display, &mode)) {
--- 
-2.30.2
-

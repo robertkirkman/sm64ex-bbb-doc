@@ -538,8 +538,10 @@ echo 0 | sudo tee /sys/class/leds/lcd\:green\:usr0/brightness
 ```
 
 
-> [!INFO]
+> [!NOTE]
 > ### CREDITS:
 > Huge thanks to zmatt on #beagle at irc.libera.chat, vanfanel, Rob Clark, Remi Avignon, Robert Nelson, and all the engineers at Texas Instruments and Imagination Technologies, without whom playing Super Mario 64 on BeagleBone Black would not be possible.
+> 
 > Thank you to benedani on The Cult Discord guild for the B3313 mod for helping with the mupen64plus setup
+> 
 > Thank you very much to nillerusr

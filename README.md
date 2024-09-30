@@ -208,9 +208,9 @@ exit
 sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
 > [!NOTE]
-> You should now be able to see and play the game. If the performance isn't satisfactory, or you want to use this new SDL for other purposes, keep reading.
+> You should now be able to see and play the game. If the performance isn't satisfactory, or you want to use this patched SDL for other purposes, keep reading.
 
-## Other software made usable by the new SDL:
+## Other software made usable by the patched SDL:
 ### mupen64plus
 > [!NOTE]
 > I don't know why, but with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as there is no need for mods that only work on PC port, not real console - or if there is need for mods that only work on console and emulator.

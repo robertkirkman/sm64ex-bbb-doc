@@ -163,7 +163,7 @@ sudo make install
 ```
 
 > [!NOTE]
-> You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-new-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there. Currently, [mupen64plus](#mupen64plus) offers better in-game performance than sm64ex.
+> You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there. Currently, [mupen64plus](#mupen64plus) offers better in-game performance than sm64ex.
 
 15. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
 

@@ -385,7 +385,7 @@ make install
 
 3. Install yt-dlp, download the official Bad Apple!! video, convert it to grayscale raw bitmap video format, and play it using OpenGL (ES 2.0) backend in an SDL window:
 > [!NOTE]
-> For some reason, without intervention the audio is delayed by almost 1 second, so I manually offset the video to improve the experience. Also, the video is 30 FPS, so if you have a 60 hz screen, it will play at 2x speed, yes really, so you would need to change the settings in the first `ffmpeg` command a bit in order to match the framerate with the refresh rate.
+> For some reason, without intervention the audio is delayed by almost 1 second, so I manually offset the video to improve the experience. Also, by doing this, I am now using a codepath in a fork of FFmpeg that is not maintained upstream and will be removed, so it would be best for me to implement a video player for BBB from scratch.
 ```bash
 cd /mnt
 python3 -m pip install -U yt-dlp
@@ -394,7 +394,7 @@ yt-dlp -o badapple_video.webm -f 248 https://www.youtube.com/watch?v=i41KoE0iMYU
 yt-dlp -o badapple_audio.webm -f 251 https://www.youtube.com/watch?v=i41KoE0iMYU
 ffmpeg -itsoffset 0.83 -i badapple_video.webm -i badapple_audio.webm -vf scale=640:480 -c:v rawvideo -c:a copy -pix_fmt gray -f matroska badapple_480_gray.mkv
 sudo pvrsrvctl --start --no-module
-ffmpeg -i badapple_480_gray.mkv -f opengl "badapple" -f alsa default
+ffmpeg -re -i badapple_480_gray.mkv -f opengl "badapple" -f alsa default
 cd
 ```
 

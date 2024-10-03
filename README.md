@@ -367,14 +367,19 @@ sudo pvrsrvctl --start --no-module
 ffmpeg -re -i badapple_480_gray.mkv -f opengl "badapple" -f alsa default
 ```
 
+### Minimal SDL demo
+> [!NOTE]
+> This is here as an example of an SDL demo that does not itself directly call OpenGL ES, but which is definitely calling code that requires the graphics driver for... something.
+```bash
+curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/non-gl.c | gcc -o unlinked-non-gl -c -xc -
+gcc -o non-gl unlinked-non-gl $(pkg-config --libs sdl2)
+sudo pvrsrvctl --start --no-module
+./non-gl
+```
+
 ## Other software that can work with SGX530
 
-### Small OpenGL ES 1.1/2.0 Demos
-
-- kmscube
-> [!TIP]
-> **[NEW]** port of upstream `kmscube --gears`!
-> 
+### kmscube
 
 ```bash
 sudo apt install -y meson
@@ -385,16 +390,6 @@ meson setup build
 meson compile -C build
 sudo pvrsrvctl --start --no-module
 build/kmscube --gears
-```
-
-- non GL demo
-> [!NOTE]
-> This is here as an example of an SDL demo that does not itself directly call OpenGL ES, but which is definitely calling code that requires the graphics driver for... something.
-```bash
-curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/non-gl.c | gcc -o unlinked-non-gl -c -xc -
-gcc -o non-gl unlinked-non-gl $(pkg-config --libs sdl2)
-sudo pvrsrvctl --start --no-module
-./non-gl
 ```
 
 ### Initializing The PowerVR Driver

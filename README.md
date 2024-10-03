@@ -5,7 +5,9 @@
 
 ### Prerequisites:
 * GNU/Linux PC with an internet connection, a MicroSD card slot and a USB A Female port
-* Original BeagleBoard BeagleBone Black - YMMV with variants
+* Original BeagleBoard BeagleBone Black - YMMV with variants.
+> [!NOTE] 
+> Official variants should be perfectly compatible but potentially simplify setup, for example, using [BeagleBone Black Wireless](https://www.beagleboard.org/boards/beaglebone-black-wireless) can probably simplify network configuration if you have access to a Wi-Fi network (the original BeagleBone Black _can_ use Wi-Fi networks if you plug in a USB Wi-Fi adapter and correctly install drivers for it, but that can easily require a lot of additional setup)
 * 2GB+ MicroSD card
 * USB A Male to Mini-B Male cord
 * Micro-HDMI Male to HDMI Male cord
@@ -14,6 +16,9 @@
 
 ### Installation:
 1. On the PC, download and extract the newest Debian 11 snapshot image for AM335x from https://rcn-ee.com, a domain found in the `sources.list` of the official 2020-04-06 compressed image of Debian 10 for the BeagleBone Black from the official [beagleboard.org downloads page](https://beagleboard.org/latest-images):
+
+> [!NOTE]
+> For a newer version of Debian, you can also install the [Debian 12 snapshot image](https://rcn-ee.com/rootfs/snapshot/2024-09-07/bookworm-minimal-armhf/am335x-eMMC-flasher-debian-12.7-minimal-armhf-2024-09-07-2gb.img.xz) instead, but then if you use a display cape and encounter a problem, you would also need the display cape workaround.
 
 > [!CAUTION]
 > If you want to run directly from the SD card instead of erasing the BBB's internal storage and overwriting it, use [another image that doesn't have `eMMC-flasher` in its name](https://rcn-ee.com/rootfs/snapshot/).
@@ -40,7 +45,7 @@ sudo dd if=am335x-eMMC-flasher-debian-11.11-minimal-armhf-2024-09-07-2gb.img of=
 > [!NOTE]
 > If you used a non-flasher image, the BBB will not overwrite the internal flash or turn off, instead leave the MicroSD card inserted and proceed.
 
-4. The BBB will take some time to boot. Once it finishes, on the PC, enable ip forwarding and set the RNDIS network adapter to which address 192.168.7.1 has been assigned to shared to other computers.
+4. The BBB will take some time to boot. Once it finishes, on the PC, enable ip forwarding and set the NCM adapter to which address 192.168.6.1 has been assigned to shared to other computers.
 
 > [!TIP]
 > If you do this, you would need to identify your network device names and network configuration and replace this with your own, but this is optional, since you can use an ethernet cord for internet access instead if available.
@@ -68,10 +73,10 @@ ssh debian@192.168.6.2
 sudo passwd debian
 ```
 
-7. Route internet traffic over the other virtual adapter and apply a DNS server address, replacing `1.1.1.1` with the DNS address of your choice:
+7. Route internet traffic over the virtual adapter and apply a DNS server address, replacing `1.1.1.1` with the DNS address of your choice:
 
 ```bash
-sudo sed -i '/^Addr.*/a Gateway=192.168.7.1\nDNS=1.1.1.1' /etc/systemd/network/usb0.network
+sudo sed -i '/^Addr.*/a Gateway=192.168.6.1\nDNS=1.1.1.1' /etc/systemd/network/usb1.network
 sudo systemctl restart systemd-networkd
 ```
 
@@ -102,6 +107,14 @@ sudo apt install -y bbb.io-kernel-5.10-ti-am335x \
                     libxkbcommon-dev \
                     usbutils
 sudo reboot
+```
+
+> [!IMPORTANT]
+> If you are using **Debian 12**, as of October 3, 2024 you also need to uninstall the default 6.1 kernel and ensure the 5.10 kernel boots by using these commands:
+
+```bash
+sudo apt remove -y bbb.io-kernel-6.1-ti bbb.io-kernel-6.1-ti-am335x
+sudo rm -rf /boot/*-6.1*
 ```
 
 10. Log into the BBB again, using your new password:
@@ -146,6 +159,7 @@ export CFLAGS="-O3 -march=armv7-a -marm -mfpu=neon -mtune=cortex-a8"
   --disable-video-vulkan \
   --disable-video-opengl \
   --disable-video-dummy \
+  --disable-video-offscreen \
   --disable-video-x11 \
   --disable-pulseaudio \
   --disable-diskaudio \
@@ -262,9 +276,16 @@ cd mupen64plus-video-gles2n64/projects/unix
 export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
 make all
 sudo make install
-sudo sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
 cd -
 ```
+
+> [!NOTE]
+> Optionally, you might want to change the default resolution for the `mupen64plus-video-gles2n64` plugin to your screen resolution or a different resolution:
+
+```bash
+sudo sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
+```
+
 
 3. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 16 above:
 > [!NOTE]
@@ -274,57 +295,6 @@ lsusb
 sudo ~/wii-u-gc-adapter/wii-u-gc-adapter &
 sudo pvrsrvctl --start --no-module
 mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
-```
-
-### [TODO: unfinished] Half-Life 2
-#### Prerequisites:
-* GNU/Linux PC with an internet connection and a MicroSD card slot or USB A Female port
-* BeagleBone Black prepared as directed in steps 1-13 of the above guide
-* 10GB+ MicroSD card or USB flash drive depending on the ports available on the PC
-* USB A Male to Mini-B Male cord
-* Micro-HDMI Male to HDMI Male cord
-* Display with an HDMI Female port
-* 2+ port powered USB hub
-* USB mouse and keyboard
-
-> [!CAUTION]
-> Be careful with unpowered USB hubs! The BBB cannot supply much current. Rather than trying to calculate that and push the limit, it is safer to use a powered hub.
-
-#### Installation:
-1. Copy a `hl2` folder and optionally `episodic`, `ep2`, or `lostcoast` folders from your Half-Life 2 installation on PC into a new folder named `halflife2` on an empty USB flash drive or SD card formatted with a UNIX-like filesystem (such as `ext4`) with at least 10GB of free space, then unmount the drive, `sync`, remove it from your PC and plug it into the BBB. 
-> [!NOTE]
-> To see how to obtain a copy of Half-Life 2, click [here](https://store.steampowered.com/app/220/HalfLife_2/).
-
-2. On the BBB, identify and mount the drive, where `/dev/XY` is the block device name of your drive's UNIX-like partition:
-```bash
-lsblk
-sudo mount /dev/XY /mnt
-cd /mnt
-```
-
-3. Download, patch, compile and install nillerusr's Source Engine into the Half-Life 2 assets folder:
-```bash
-sudo apt install -y libfreetype6-dev \
-                    libfontconfig1-dev \
-                    libopenal-dev \
-                    libjpeg-dev \
-                    libpng-dev \
-                    libcurl4-gnutls-dev \
-                    libbz2-dev \
-                    libedit-dev \
-                    python-is-python3
-git clone --recursive --depth 1 https://github.com/nillerusr/source-engine.git
-cd source-engine
-curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/source-engine-bbb.patch | git apply -v
-./waf configure -T debug --prefix=/mnt/halflife2
-./waf install
-```
-
-4. Prepare input devices (keyboard and mouse), navigate to the new Half-Life 2 installation, start the PowerVR userspace daemon if it's not already running, and run `hl2_launcher`:
-```bash
-cd /mnt/halflife2/
-sudo pvrsrvctl --start --no-module
-./hl2_launcher
 ```
 
 ### Bad Apple!!
@@ -395,63 +365,36 @@ yt-dlp -o badapple_audio.webm -f 251 https://www.youtube.com/watch?v=i41KoE0iMYU
 ffmpeg -itsoffset 0.83 -i badapple_video.webm -i badapple_audio.webm -vf scale=640:480 -c:v rawvideo -c:a copy -pix_fmt gray -f matroska badapple_480_gray.mkv
 sudo pvrsrvctl --start --no-module
 ffmpeg -re -i badapple_480_gray.mkv -f opengl "badapple" -f alsa default
-cd
-```
-
-### [TODO: unfinished] GZDoom
-
-1.
-```bash
-wget -O ~/.config/gzdoom/doom.wad https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad
-sudo apt install -y libgme-dev libmpg123-dev timidity
-git clone https://github.com/coelckers/ZMusic.git
-cd ZMusic
-mkdir build
-cd build
-export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-make
-sudo make install
-cd
-```
-
-2.
-```bash
-git clone https://github.com/coelckers/gzdoom.git
-cd gzdoom
-mkdir build
-cd build
-export CFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
-cmake .. -DNO_FMOD=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-make
-sudo make install
-```
-
-3.
-```bash
-sudo pvrsrvctl --start --no-module
-gzdoom -gles2_renderer
 ```
 
 ## Other software that can work with SGX530
 
-### [TODO: try to update guide] Qt/Quick EGLFS and Weston Wayland compositor
-> [!NOTE]
-> The guide at the link below is very outdated and uses much older versions of the graphics driver and other software than I use in this repository, which are incompatible, and if you try to follow the steps there, you will have to start over again before anything here will work again; however, until I create a replacement, it is very good for historical reference and helped me out a lot when I started trying to use the BBB.
+### Small OpenGL ES 1.1/2.0 Demos
 
-Years ago, Remi Avignon's eLinux wiki page was the best SGX530 tutorial, before I created this repository. It includes directions for using Qt/Quick EGLFS and Weston compositor (separately) on BBB, which I have verified do work if you carefully use the exact versions he mentions of all the software involved. If you are interested, you can read it [here](https://elinux.org/BeagleBoneBlack/SGX_%2B_Qt_EGLFS_%2B_Weston).
+- kmscube
+> [!TIP]
+> **[NEW]** port of upstream `kmscube --gears`!
+> 
 
-### [TODO: fill with all working demos] Small OpenGL ES 1.1/2.0 Demos
-
-1. [TODO: rebase] kmscube
 ```bash
-git clone https://github.com/robertkirkman/kmscube.git
+sudo apt install -y meson
+git clone https://gitlab.freedesktop.org/mesa/kmscube.git
 cd kmscube
+curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/kmscube-bbb.patch | git apply -v
 meson setup build
 meson compile -C build
 cd build
 sudo pvrsrvctl --start --no-module
-./kmscube
+./kmscube --gears
+```
+
+- non GL demo
+> [!NOTE]
+> This is here as an example of an SDL demo that does not itself directly call OpenGL ES, but which is definitely calling code that requires the graphics driver for... something.
+```bash
+curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/non-gl.c | gcc -o non-gl $(pkg-config --libs sdl2) -x c -
+sudo pvrsrvctl --start --no-module
+./non-gl
 ```
 
 ### Initializing The PowerVR Driver
@@ -492,6 +435,24 @@ sudo pvrsrvctl --start --no-module
 ```
 These arguments work the best for me, and if you try to use `pvrsrvctl` a different way, unfortunately it might not work correctly. If you want to experiment or improve on this method, though, feel free to. After doing this, you should now see the "`UM and KM match OK`" message in your kernel log, and can proceed to use the GPU for as long as this BBB stays on. If you don't, you might have the wrong user-space driver installed, so you should carefully review step 11.
 
+### How to make the [4DCAPE-70T display cape](https://4dsystems.com.au/products/4dcape-70t/) work on the Debian 12 images
+
+For me, as of October 3, 2024 the [Debian 12 images for BeagleBone Black](https://forum.beagleboard.org/t/debian-12-x-bookworm-monthly-snapshot-2023-10-07/36175) have a black screen by default when the display cape is plugged in. Logging in remotely with SSH, then running these commands can work around that problem.
+
+> [!WARNING]
+> This could possibly receive a fix in a future official build of Debian 12 for BeagleBone Black, and these commands might not be necessary anymore when you read this.
+
+```
+sudo apt update
+sudo apt install -y devscripts
+dget -u https://repos.rcn-ee.com/debian/pool/main/b/bb-cape-overlays/bb-cape-overlays_4.14.20210821.0-0~bullseye+20210821.dsc
+cd bb-cape-overlays-4.14.20210821.0/
+debuild -b -uc -us
+sudo apt install -y ../bb-cape-overlays_4.14.20210821.0-0~bullseye+20210821_armhf.deb
+sudo sed -i 's/#enable_uboot_cape_universal=1/enable_uboot_cape_universal=1/g' /boot/uEnv.txt
+sudo reboot
+```
+
 ## Other things not related to graphics
 
 ### Stream audio from BBB to PC using pulseaudio `module_native_protocol_tcp`
@@ -524,9 +485,6 @@ export PULSE_SERVER=localhost
 sm64ex/build/us_pc/sm64.us.f3dex2e
 ```
 
-### [TODO: update guide] Libreboot
-The BeagleBone Black is one of the most open-source hardware affordable computers created before the market availability of RISC-V. For this reason, it is popular as a bootstrap for improving the potential user Freedom of more performant, more proprietary devices using the [Libreboot](https://libreboot.org/) fully open source motherboard firmware project. Click [here](https://libreboot.org/docs/install/spi.html#beaglebone-black-bbb) for their guide to flashing compatible motherboard firmware chips using the BBB's SPI port (may be outdated).
-
 ### How to turn off the LEDs
 
 - **on the BBB motherboard**
@@ -537,7 +495,6 @@ sudo bash -c 'for i in $(seq 0 3); do echo 0 | sudo tee "/sys/class/leds/beagleb
 ```bash
 echo 0 | sudo tee /sys/class/leds/lcd\:green\:usr0/brightness
 ```
-
 
 > [!NOTE]
 > ### CREDITS:

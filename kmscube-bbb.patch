@@ -1,12 +1,20 @@
 --- a/cube-gears.c
 +++ b/cube-gears.c
-@@ -33,3 +33,3 @@
+@@ -31,7 +31,7 @@
+ #include <sys/time.h>
+ #include <math.h>
  
 -#include <GL/gl.h>
 +#include <GLES2/gl2.h>
  
-@@ -492,3 +492,3 @@ gears_framebuffer_create()
+ #include "common.h"
+ #include "esUtil.h"
+@@ -490,7 +490,7 @@ gears_framebuffer_create()
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 -       glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, texw, texh, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, 0);
 +       glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8_OES, texw, texh, 0, GL_DEPTH_STENCIL_OES, GL_UNSIGNED_INT_24_8_OES, 0);
  
+        glGenFramebuffers(1, &gl.gears_fb.fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, gl.gears_fb.fb);

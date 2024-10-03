@@ -178,7 +178,7 @@ cd
 ```
 
 > [!NOTE]
-> You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there. Currently, [mupen64plus](#mupen64plus) offers better in-game performance than sm64ex.
+> You should now be able to follow any of the [other guides](#other-software-made-usable-by-the-patched-sdl) in this document. If you're looking for one of them instead of the Super Mario 64 PC port, skip there.
 
 14. Download the Super Mario 64 PC port and place your Super Mario 64 ROM in the repository root directory, replacing `baserom.us.z64` with your ROM's filename (any localization):
 
@@ -224,78 +224,6 @@ sm64ex/build/us_pc/sm64.us.f3dex2e
 > You should now be able to see and play the game. If the performance isn't satisfactory, or you want to use this patched SDL for other purposes, keep reading.
 
 ## Other software made usable by the patched SDL:
-### mupen64plus
-> [!NOTE]
-> I don't know why, but with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as there is no need for mods that only work on PC port, not real console - or if there is need for mods that only work on console and emulator.
-
-#### Prerequisites:
-* Same as [sm64ex](#prerequisites)
-
-#### Installation:
-
-1. Download, compile and install mupen64plus and its core plugins:
-```bash
-sudo apt install -y zlib1g-dev \
-                    libpng-dev \
-                    libfreetype-dev \
-                    nasm \
-                    libboost-dev \
-                    libboost-filesystem-dev
-git clone https://github.com/mupen64plus/mupen64plus-core.git
-git clone https://github.com/mupen64plus/mupen64plus-ui-console.git
-git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git
-git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git
-git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git
-export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
-cd mupen64plus-core/projects/unix
-make all
-sudo make install
-cd -
-cd mupen64plus-ui-console/projects/unix
-make all
-sudo make install
-cd -
-cd mupen64plus-audio-sdl/projects/unix
-make all
-sudo make install
-cd -
-cd mupen64plus-input-sdl/projects/unix
-make all
-sudo make install
-cd -
-cd mupen64plus-rsp-hle/projects/unix
-make all
-sudo make install
-cd -
-```
-
-2. Download, compile and install the `gles2n64` video plugin for mupen64plus, then adjust its system-wide configuration to match the system screen resolution:
-```bash
-git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
-cd mupen64plus-video-gles2n64/projects/unix
-export USE_GLES=1 NEON=1 HOST_CPU=armv7 PREFIX=/usr OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8" 
-make all
-sudo make install
-cd -
-```
-
-> [!NOTE]
-> Optionally, you might want to change the default resolution for the `mupen64plus-video-gles2n64` plugin to your screen resolution or a different resolution:
-
-```bash
-sudo sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
-```
-
-
-3. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 16 above:
-> [!NOTE]
-> For more info about and troubleshooting for the `pvrsrvctl` command, scroll [here](#initializing-the-powervr-driver).
-```bash
-lsusb
-sudo ~/wii-u-gc-adapter/wii-u-gc-adapter &
-sudo pvrsrvctl --start --no-module
-mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
-```
 
 ### Bad Apple!!
 >The famous Touhou music video
@@ -368,8 +296,6 @@ ffmpeg -re -i badapple_480_gray.mkv -f opengl "badapple" -f alsa default
 ```
 
 ### Minimal SDL demo
-> [!NOTE]
-> This is here as an example of an SDL demo that does not itself directly call OpenGL ES, but which is definitely calling code that requires the graphics driver for... something.
 ```bash
 curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/non-gl.c | gcc -o unlinked-non-gl -c -xc -
 gcc -o non-gl unlinked-non-gl $(pkg-config --libs sdl2)

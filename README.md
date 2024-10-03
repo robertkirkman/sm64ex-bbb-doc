@@ -18,7 +18,7 @@
 1. On the PC, download and extract the newest Debian 11 snapshot image for AM335x from https://rcn-ee.com, a domain found in the `sources.list` of the official 2020-04-06 compressed image of Debian 10 for the BeagleBone Black from the official [beagleboard.org downloads page](https://beagleboard.org/latest-images):
 
 > [!NOTE]
-> For a newer version of Debian, you can also install the [Debian 12 snapshot image](https://rcn-ee.com/rootfs/snapshot/2024-09-07/bookworm-minimal-armhf/am335x-eMMC-flasher-debian-12.7-minimal-armhf-2024-09-07-2gb.img.xz) instead, but then if you use a display cape and encounter a problem, you would also need the display cape workaround.
+> For a newer version of Debian, you can also install the [Debian 12 snapshot image](https://rcn-ee.com/rootfs/snapshot/2024-09-07/bookworm-minimal-armhf/am335x-eMMC-flasher-debian-12.7-minimal-armhf-2024-09-07-2gb.img.xz) instead, but then if you use a display cape and encounter a problem, you would also need the [display cape workaround](#how-to-make-the-4dcape-70t-display-cape-work-on-the-debian-12-images).
 
 > [!CAUTION]
 > If you want to run directly from the SD card instead of erasing the BBB's internal storage and overwriting it, use [another image that doesn't have `eMMC-flasher` in its name](https://rcn-ee.com/rootfs/snapshot/).

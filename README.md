@@ -383,16 +383,16 @@ cd kmscube
 curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/kmscube-bbb.patch | git apply -v
 meson setup build
 meson compile -C build
-cd build
 sudo pvrsrvctl --start --no-module
-./kmscube --gears
+build/kmscube --gears
 ```
 
 - non GL demo
 > [!NOTE]
 > This is here as an example of an SDL demo that does not itself directly call OpenGL ES, but which is definitely calling code that requires the graphics driver for... something.
 ```bash
-curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/non-gl.c | gcc -o non-gl $(pkg-config --libs sdl2) -x c -
+curl https://raw.githubusercontent.com/robertkirkman/sm64ex-bbb-doc/main/non-gl.c | gcc -o unlinked-non-gl -c -xc -
+gcc -o non-gl unlinked-non-gl $(pkg-config --libs sdl2)
 sudo pvrsrvctl --start --no-module
 ./non-gl
 ```

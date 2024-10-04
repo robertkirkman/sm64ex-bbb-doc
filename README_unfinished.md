@@ -5,7 +5,7 @@
 
 ### [TODO: fix black areas on most of screen] Minetest
 
-
+![image](https://github.com/user-attachments/assets/ebe41186-8e0c-4a19-b77d-3be31e9b87e1)
 
 #### Prerequisites:
 

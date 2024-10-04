@@ -225,8 +225,120 @@ sm64ex/build/us_pc/sm64.us.f3dex2e
 
 ## Other software made usable by the patched SDL:
 
+### mupen64plus
+> [!NOTE]
+> I don't know why, but with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as you don't need mods that only work on PC port, not real console - or if you need mods that only work on console and emulator.
+
+#### Prerequisites:
+* Same as [sm64ex](#prerequisites)
+
+#### Installation:
+
+1. Install dependencies:
+```bash
+sudo apt install -y zlib1g-dev \
+                    libpng-dev \
+                    libfreetype-dev \
+                    nasm \
+                    libboost-dev \
+                    libboost-filesystem-dev
+```
+
+2. Set build flags:
+
+> [!IMPORTANT]
+> Make sure to set these environment variables in every shell where you compile mupen64plus components.
+
+```bash
+export VULKAN=0 \
+       USE_GLES=1 \
+       NEON=1 \
+       HOST_CPU=armv7 \
+       PREFIX=/usr \
+       OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8"
+```
+
+3. mupen64plus-core
+
+```bash
+git clone https://github.com/mupen64plus/mupen64plus-core.git
+cd mupen64plus-core/projects/unix/
+make all
+sudo -E make install
+cd -
+```
+
+4. mupen64plus-ui-console
+
+```bash
+git clone https://github.com/mupen64plus/mupen64plus-ui-console.git
+cd mupen64plus-ui-console/projects/unix/
+make all
+sudo -E make install
+cd -
+```
+
+5. mupen64plus-audio-sdl
+
+```bash
+git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git
+cd mupen64plus-audio-sdl/projects/unix/
+make all
+sudo -E make install
+cd -
+```
+
+6. mupen64plus-input-sdl
+
+```bash
+git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git
+cd mupen64plus-input-sdl/projects/unix/
+make all
+sudo -E make install
+cd -
+```
+
+7. mupen64plus-rsp-hle
+
+```bash
+git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git
+cd mupen64plus-rsp-hle/projects/unix/
+make all
+sudo -E make install
+cd -
+```
+
+8. mupen64plus-video-gles2n64
+
+```bash
+git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
+cd mupen64plus-video-gles2n64/projects/unix/
+make all
+sudo -E make install
+cd -
+```
+
+> [!TIP]
+> Optionally, you might want to change the default resolution for the `mupen64plus-video-gles2n64` plugin to your screen resolution or a different resolution:
+
+```bash
+sudo sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
+```
+
+9. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 16 above:
+
+> [!TIP]
+> If you have no working audio devices plugged in, you will also need to append `--audio dummy`, otherwise the game will not launch.
+
+```bash
+lsusb
+sudo ~/wii-u-gc-adapter/wii-u-gc-adapter &
+sudo pvrsrvctl --start --no-module
+mupen64plus --fullscreen baserom.us.z64
+```
+
 ### Bad Apple!!
->The famous Touhou music video
+> The famous Touhou music video
 
 [![demo](https://i.ytimg.com/vi_webp/Bh3-1u7sITI/maxresdefault.webp)](https://www.youtube.com/watch?v=Bh3-1u7sITI "Bad Apple!! on BeagleBone Black")
 

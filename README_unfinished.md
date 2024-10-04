@@ -3,115 +3,75 @@
 > [!NOTE]
 > These are unfinished directions for using several things that worked in the past or that me or someone else **started** porting, but either the ports aren't finished or the directions are so outdated that nothing in there will work on the current images for Debian 11/12 without extensive rewrites.
 
-### [TODO: regression - bisect] mupen64plus
-> [!NOTE]
-> I don't know why, but with the steps in this guide, and all other things being equal, Super Mario 64 performs better on BBB in `mupen64plus-video-gles2n64` than it does in `sm64ex`, making mupen64plus a good choice as long as you don't need mods that only work on PC port, not real console - or if you need mods that only work on console and emulator.
+### [TODO: fix black areas on most of screen] Minetest
+
+
 
 #### Prerequisites:
-* Same as [sm64ex](#prerequisites)
 
-#### Installation:
+- At least 1 GB [swap partition or swap file](https://wiki.debian.org/Swap)
+- USB keyboard
+- Monitor screen with compatible mini-HDMI cord or display cape
 
-1. Install dependencies:
-```bash
-sudo apt install -y zlib1g-dev \
-                    libpng-dev \
-                    libfreetype-dev \
-                    nasm \
-                    libboost-dev \
-                    libboost-filesystem-dev
-```
+#### Steps
 
-2. Set build flags:
-
-> [!IMPORTANT]
-> Make sure to set these environment variables in every shell where you compile mupen64plus components.
+1. Install dependencies
 
 ```bash
-export VULKAN=0 \
-       USE_GLES=1 \
-       NEON=1 \
-       HOST_CPU=armv7 \
-       PREFIX=/usr \
-       OPTFLAGS="-O3 -flto -march=armv7-a -marm -mfpu=neon -mfloat-abi=hard -mtune=cortex-a8"
+sudo apt install meson \
+                 libjpeg-dev \
+                 libvorbis-dev \
+                 libopenal-dev \
+                 libsqlite3-dev \
+                 libcurl-dev
 ```
 
-3. mupen64plus-core
-
-```
-git clone https://github.com/mupen64plus/mupen64plus-core.git
-cd mupen64plus-core/projects/unix/
-make all
-sudo -E make install
-cd -
-```
-
-4. mupen64plus-ui-console
-
-```
-git clone https://github.com/mupen64plus/mupen64plus-ui-console.git
-cd mupen64plus-ui-console/projects/unix/
-make all
-sudo -E make install
-cd -
-```
-
-5. mupen64plus-audio-sdl
+2. Clone repository
 
 ```bash
-git clone https://github.com/mupen64plus/mupen64plus-audio-sdl.git
-cd mupen64plus-audio-sdl/projects/unix/
-make all
-sudo -E make install
-cd -
+git clone --recursive https://github.com/minetest/minetest.git
+cd minetest/
 ```
 
-6. mupen64plus-input-sdl
-
-```bash
-git clone https://github.com/mupen64plus/mupen64plus-input-sdl.git
-cd mupen64plus-input-sdl/projects/unix/
-make all
-sudo -E make install
-cd -
-```
-
-7. mupen64plus-rsp-hle
-
-```
-git clone https://github.com/mupen64plus/mupen64plus-rsp-hle.git
-cd mupen64plus-rsp-hle/projects/unix/
-make all
-sudo -E make install
-cd -
-```
-
-8. mupen64plus-video-gles2n64
-
-```bash
-git clone https://github.com/ricrpi/mupen64plus-video-gles2n64.git
-cd mupen64plus-video-gles2n64/projects/unix/
-make all
-sudo -E make install
-cd -
-```
+3. Enable swap partition (if not already enabled) and compile Minetest:
 
 > [!TIP]
-> Optionally, you might want to change the default resolution for the `mupen64plus-video-gles2n64` plugin to your screen resolution or a different resolution:
+> Swap space is necessary **both to link some of the object files, and to generate Minetest worlds at runtime**, on systems that only have 512 MB of physical RAM like the BBB
 
 ```bash
-sudo sed -i -e 's/window\ width=400/window\ width=640/g' -e 's/window\ height=240/window\ height=480/g' /usr/share/mupen64plus/gles2n64.conf
+sudo swapon /dev/mmcblk0p2
+mkdir build/
+cd build/
+cmake -G Ninja .. -DENABLE_GLES2=ON \
+                  -DENABLE_OPENGL=OFF \
+                  -DENABLE_OPENGL3=OFF
+ninja
+sudo ninja install
 ```
 
+4. Download a Minetest gamemode:
 
-9. Run mupen64plus, where `baserom.us.z64` is the path to your Super Mario 64 ROM. `pvrsrvctl` only needs to be run once since the last time it was manually stopped or the BBB was rebooted. If you are using a GameCube Controller Adapter with vendor and device ID `057e:0337`, run `wii-u-gc-adapter` from step 16 above:
-> [!NOTE]
-> For more info about and troubleshooting for the `pvrsrvctl` command, scroll [here](#initializing-the-powervr-driver).
+> [!CAUTION]
+> This is **not** the [officially-sanctioned way to install VoxeLibre](https://git.minetest.land/VoxeLibre/VoxeLibre#installation), this is an incomplete development test on BeagleBone Black that currently has an unplayable mostly-black screen as shown above
+
 ```bash
-lsusb
-sudo ~/wii-u-gc-adapter/wii-u-gc-adapter &
+mkdir -p ~/.minetest/{games/,worlds/world/}
+git clone https://git.minetest.land/VoxeLibre/VoxeLibre.git ~/.minetest/games/VoxeLibre
+```
+
+5. Launch a server, then kill it after it has set a valid gameid into the default `world` folder:
+
+```bash
+minetest --server --gameid VoxeLibre
+sleep 30
+kill -9 $(pidof minetest)
+```
+
+6. Run Minetest client with the default world
+
+```bash
 sudo pvrsrvctl --start --no-module
-mupen64plus --fullscreen --gfx mupen64plus-video-n64 baserom.us.z64
+minetest --go
 ```
 
 ### [TODO: unfinished] Half-Life 2

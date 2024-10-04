@@ -1,5 +1,3 @@
-diff --git a/cube-gears.c b/cube-gears.c
-index d5b7a5f..16480ec 100644
 --- a/cube-gears.c
 +++ b/cube-gears.c
 @@ -31,7 +31,7 @@
@@ -20,3 +18,14 @@ index d5b7a5f..16480ec 100644
  
  	glGenFramebuffers(1, &gl.gears_fb.fb);
  	glBindFramebuffer(GL_FRAMEBUFFER, gl.gears_fb.fb);
+--- a/kmscube.c
++++ b/kmscube.c
+@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
+ 	char mode_str[DRM_DISPLAY_MODE_LEN] = "";
+ 	char *p;
+ 	enum mode mode = SMOOTH;
+-	uint32_t format = DRM_FORMAT_XRGB8888;
++	uint32_t format = DRM_FORMAT_RGB565;
+ 	uint64_t modifier = DRM_FORMAT_MOD_LINEAR;
+ 	int samples = 0;
+ 	int atomic = 0;
